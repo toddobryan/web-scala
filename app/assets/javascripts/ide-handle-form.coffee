@@ -1,8 +1,10 @@
 $('document').ready(->
     $('#code').submit((e) ->
-        typed = $('input[name=what]').val()
-        $('.prev-content').append('<p>&gt; ' + typed + '</p>')
-        $('input[name=what]').val('')
-        return false
+        $.post('/interpret', $('#code').serialize(), (result) ->
+            $('.prev-content').append('<p>&gt; ' + $('#line').val() + '</p>')
+            $('.prev-content').append('<p>' + result + '</p>')
+            $('#line').val('')
+        )
+        e.preventDefault()
     )
 )
