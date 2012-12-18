@@ -1,11 +1,15 @@
 @()
 
-@scripts = { <script src="@routes.Assets.at("javascripts/ide-handle-form.js")" type="text/javascript"></script> }
+@scripts = { <script src="http://d1n0x3qji82z53.cloudfront.net/src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>}
 
 @main("Web Scala", scripts) {
   <h2>Web Scala</h2>
   <div class="prev-content"></div>
   <form id="code" method="post" action="./interpret">
-  &gt; <input id="line" name="line" type="text"></input>
+  &gt; <div id="editor"></div>
+  <input type="text" name="line" id="line" />
   </form>
+  <button onclick="$('#code').submit">Run</button>
+  <script src="@routes.Assets.at("javascripts/load-editor.js")" type="text/javascript"></script>
+  <script src="@routes.Assets.at("javascripts/ide-handle-with-ace.js")" type="text/javascript"></script>
 }
