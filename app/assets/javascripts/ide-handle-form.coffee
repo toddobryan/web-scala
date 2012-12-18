@@ -1,8 +1,14 @@
 $('document').ready(->
+    editor = ace.edit("editor")
+    editor.setTheme("ace/theme/chrome")
+    editor.getSession().setMode("ace/mode/scala")
+    editor.setValue("")    
     $('#code').submit((e) ->
-        $.post('/interpret', $('#editor').serialize(), (result) ->
-            $('.prev-content').append('<p>&gt; ' + editor.getValue() + '</p>')
+        $('#line').val(editor.getValue())
+        $.post('/interpret', $('#code').serialize(), (result) ->
+            $('.prev-content').append('<p>&gt; ' + $('#line').val() + '</p>')
             $('.prev-content').append('<p>' + result + '</p>')
+            $('#line').val("")
             editor.setValue("")
         )
         e.preventDefault()
