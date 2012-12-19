@@ -14,10 +14,12 @@ object WebScala extends Controller {
   }
 
   def interpret = Action { implicit req =>
+    println(req.body.asFormUrlEncoded.getOrElse(Map()))
     val line = req.body.asFormUrlEncoded.getOrElse(Map()).getOrElse("line", Nil) match {
       case Nil => ""
       case fst :: rst => fst
     }
+    println(line)
     val start = HtmlRepl.out.getBuffer.length
     HtmlRepl.repl.interpret(line) match {
       case IntpResults.Success => Ok("" + HtmlRepl.repl.valueOfTerm(HtmlRepl.repl.mostRecentVar).getOrElse(""))
