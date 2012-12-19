@@ -1,9 +1,11 @@
 postToAjax = (editor) -> 
     code = editor.getValue()
-    highlightedCode = $('.ace_line')
+    highlightedCode = $('div.ace_text-layer').html()
     $.post('/interpret', $.param({line : code}), (result) ->
-        $('.prev-content').append('<p>&gt; ' + code + '</p>')
-        $('.prev-content').append('<p>' + result + '</p>')
+        $('#prev-content').append('<div>&gt; ' + highlightedCode + '</div> <br />')
+        editor.setValue(result)
+        highlightedResult = "NeedToFinishThis"
+        $('#prev-content').append(result + '<br /><br />')
         editor.setValue("")
     )
 
@@ -19,7 +21,7 @@ $('document').ready(() ->
         exec: (editor) -> postToAjax(editor)
     })
     editor.getSession().on('change', (e) ->
-    	length = editor.session.getLength() * 20
+    	length = editor.session.getLength() * 18
     	$('div#editor').height(length)
     	editor.resize()
     )
