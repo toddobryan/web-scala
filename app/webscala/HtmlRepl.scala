@@ -18,6 +18,8 @@ object HtmlRepl {
     val settings = new Settings
     settings.embeddedDefaults(new ReplClassLoader(settings.getClass().getClassLoader()))
     val theRepl = new IMain(settings, new PrintWriter(out))
+    theRepl.addImports("scala.language.ImplicitConversions")
+    theRepl.addImports("image._")
     theRepl
   }
 }
