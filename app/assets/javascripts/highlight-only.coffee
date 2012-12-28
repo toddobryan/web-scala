@@ -1,0 +1,5 @@
+editor = ace.edit("editor-highlight")
+editor.setTheme("ace/theme/chrome")
+editor.getSession().setMode("ace/mode/scala")
+content = $('#content').attr('storeVal')
+editor.setValue(content)
