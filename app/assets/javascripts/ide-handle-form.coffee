@@ -1,11 +1,18 @@
+getHighlight = () ->
+    retLine = $('#editor-highlight .ace_text-layer').html()
+    alert(retLine)
+    $('#editor-highlight').remove()
+    $('#prev-content').append(retLine)
+    
 postToAjax = (editor) -> 
     code = editor.getValue()
     highlightedCode = $('div.ace_text-layer').html()
     $.post('/interpret', $.param({line : code}), (result) ->
         $('#prev-content').append('<div>&gt; ' + highlightedCode + '</div> <br />')
         $('#prev-content').append(result + '<br /><br />')
-        editor.setValue("")
     )
+    alert("this alert doesn't run")
+    editor.setValue("")
 
 $('document').ready(() ->
     editor = ace.edit("editor")

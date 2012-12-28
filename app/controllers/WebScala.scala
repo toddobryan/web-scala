@@ -22,9 +22,9 @@ object WebScala extends Controller {
     println(line)
     val start = HtmlRepl.out.getBuffer.length
     HtmlRepl.repl.interpret(line) match {
-      case IntpResults.Success => Ok("" + HtmlRepl.repl.valueOfTerm(HtmlRepl.repl.mostRecentVar).getOrElse(""))
-      case IntpResults.Error => Ok(HtmlRepl.out.getBuffer.substring(start))
-      case IntpResults.Incomplete => Ok("We don't do incomplete statements, yet.")
+      case IntpResults.Success => Ok(views.html.webscala.highlight(HtmlRepl.repl.valueOfTerm(HtmlRepl.repl.mostRecentVar).getOrElse("")))
+      case IntpResults.Error => Ok(views.html.webscala.highlight(HtmlRepl.out.getBuffer.substring(start)))
+      case IntpResults.Incomplete => Ok(views.html.webscala.highlight("We don't do incomplete statements, yet."))
     }
   }
 }
