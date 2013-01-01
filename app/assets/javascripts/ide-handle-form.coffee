@@ -1,19 +1,15 @@
-getHighlight = () ->
-    retLine = $('#editor-highlight .ace_text-layer').html()
-    alert(retLine)
-    $('#editor-highlight').remove()
-    $('#prev-content').append(retLine)
-    
 postToAjax = (editor) -> 
     code = editor.getValue()
     highlightedCode = $('div.ace_text-layer').html()
     $.post('/interpret', $.param({line : code}), (result) ->
-        $('#prev-content').append('<div>&gt; ' + highlightedCode + '</div> <br />')
-        $('#prev-content').append(result + '<br /><br />')
+        $('#prev-content').append('<div>&gt; ' + code + '</div> <br />')
+        $('#prev-content').append('<code class="prettyprint lang-scala">' +
+        						  result +
+        						  '</code><br /><br />')
     )
-    alert("this alert doesn't run")
     editor.setValue("")
 
+$('body').load(prettyPrint())
 $('document').ready(() ->
     editor = ace.edit("editor")
     editor.setTheme("ace/theme/chrome")
@@ -28,16 +24,16 @@ $('document').ready(() ->
     editor.getSession().on('change', (e) ->
     	if(editor.session.getLength() < 10) 
     		$('div.ace_gutter').width(0)
-    		$('div.ace_sb').width(0)
+    		$('div.ace_scrollbar').width(0)
     		length = editor.session.getLength() * 18
     		$('div#editor').height(length)
     		editor.resize()
     	else 
     		$('div.ace_gutter').width(40)
-    		$('div.ace_sb').width(20)
+    		$('div.ace_scrollbar').width(20)
     )
     $('div.ace_gutter').width(0)
-    $('div.ace_sb').width(0)
+    $('div.ace_scrollbar').width(0)
 	$('#code').submit((e) ->
 		postToAjax(editor)
 		e.preventDefault()
