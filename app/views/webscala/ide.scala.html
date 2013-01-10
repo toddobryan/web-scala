@@ -1,19 +1,21 @@
 @()
 
 @scripts = { 
-<script src="@routes.Assets.at("ace/ace.js")" type="text/javascript" charset="utf-8"></script>
-<script src="@routes.Assets.at("javascripts/prettify.js")" type="text/javascript"></script>
-<script src="@routes.Assets.at("javascripts/lang-scala.js")" type="text/javascript"></script>
-<script src="@routes.Assets.at("javascripts/ide-handle-form.js")" type="text/javascript"></script>
+		<script src="@routes.Assets.at("ace/ace.js")" type="text/javascript" charset="utf-8"></script>
+		<link media="screen" href="/assets/stylesheets/prettify.css") type="text/css" rel="stylesheet" />
+		<script src="@routes.Assets.at("javascripts/prettify.js")" type="text/javascript"></script>
+		<script src="@routes.Assets.at("javascripts/lang-scala.js")" type="text/javascript"></script>
+		<script src="@routes.Assets.at("javascripts/ide-handle-form.js")" type="text/javascript"></script>
 }
 
 @main("Web Scala", scripts) {
-  <link href="prettify.css" type="text/css" rel="stylesheet" />
   
-  <h2>Web Scala</h2>
-  <div id="prev-content"></div>
-  <form id="code" method="post" action="./interpret">
-    <div style="float: left; font-size: 18px;">&gt;  </div><div id="editor"></div>
-  (Press Ctrl-Enter to run your code.)
-  </form>
+  <div class="span10">
+  	<div id="prev-content"></div>
+  	<code class="prettyprint language-scala">def f(x: Int): Int = 0</code>
+  	<form id="code" method="post" action="./interpret">
+   	 <div style="float: left; font-size: 18px;">&gt;  </div><div id="editor"></div>
+  	(Press Ctrl-Enter to run your code.)
+  	</form>
+  </div>
 }
