@@ -10,3 +10,6 @@ GET     /assets/*file               controllers.Assets.at(path="/public", file)
 
 GET     /ide                        controllers.WebScala.ide
 POST    /interpret                  controllers.WebScala.interpret
+
+# Files
+GET		/file/:id					controllers.WebScala.showFile(id: Long)

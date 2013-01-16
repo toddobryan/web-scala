@@ -1,10 +1,10 @@
-/*
 package models.files
 
 import javax.jdo.annotations._
-import models.users._
-import util._
-import scala.xml._
+import org.datanucleus.api.jdo.query._
+import org.datanucleus.query.typesafe._
+import scalajdo._
+import models.auth._
 
 @PersistenceCapable(detachable="true")
 class File {
@@ -42,12 +42,17 @@ class File {
 }
 
 object File {
-  
+	def getById(id: Long)(implicit pm: ScalaPersistenceManager): Option[File] = {
+	  DataStore.execute { tpm =>
+	    val cand = QFile.candidate
+	    tpm.query[File].filter(cand.id.eq(id)).executeOption
+	  }
+	}
 }
 
 trait QFile extends PersistableExpression[File] {
   private[this] lazy val _id: NumericExpression[Long] = new NumericExpressionImpl[Long](this, "_id")
-  def id: NumbericExpression[Long] = _id
+  def id: NumericExpression[Long] = _id
   
   private[this] lazy val _title: StringExpression = new StringExpressionImpl(this, "_title")
   def title: StringExpression = _title
@@ -78,4 +83,3 @@ object QFile {
   
   def variable(name: String): QFile = QFile(classOf[File], name, ExpressionType.VARIABLE)
 }
-*/

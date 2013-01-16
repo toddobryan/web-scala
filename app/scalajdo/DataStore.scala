@@ -16,4 +16,17 @@ object DataStore {
     }
     threadLocalPersistenceManager.get()
   }
+  
+  def withTransaction[A](block: (ScalaPersistenceManager => A)): A = {
+	implicit val pm: ScalaPersistenceManager = DataStore.pm
+    pm.beginTransaction()
+    val r = block(pm)
+    pm.commitTransactionAndClose()
+    r
+  }
+  
+  def execute[A](block: (ScalaPersistenceManager => A))(implicit pm: ScalaPersistenceManager): A = {
+    if (pm != null) block(pm)
+    else DataStore.withTransaction( tpm => block(tpm) )
+  }
 }
