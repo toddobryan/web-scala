@@ -16,16 +16,14 @@ class File {
   private[this] var _owner: User = _
   private[this] var _content: String = _
   
-  def this(id: Long, title: String, owner: User, content: String) {
+  def this(title: String, owner: User, content: String) {
     this()
-    _id = id
     _title = title
     _owner = owner
     _content = content
   }
   
   def id: Long = _id
-  def id_=(theId: Long) = (_id = theId)
   
   def title: String = _title
   def title_=(theTitle: String) = (_title = theTitle)
