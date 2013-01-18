@@ -28,8 +28,70 @@ object ApplicationBuild extends Build {
 
   val main = play.Project(appName, appVersion, appDependencies).settings(
     // Add your own project settings here
-    resolvers += "Sonatype Public" at "https://oss.sonatype.org/content/groups/public/",
-    scalacOptions ++= Seq("-deprecation", "-feature")
+    ((resolvers += "Sonatype Public" at "https://oss.sonatype.org/content/groups/public/") +:
+     (scalacOptions ++= Seq("-deprecation", "-feature")) +:
+      Nucleus.settings): _*
+    
   )
+/*    val main = PlayProject(appName, appVersion, appDependencies, mainLang = SCALA).settings(
+      ((resolvers += "t2v.jp repo" at "http://www.t2v.jp/maven-repo/") +:
+       (testOptions in Test := Nil) +: 
+       Nucleus.settings): _*
+    )
+*/
+}
 
+object Nucleus {
+  
+  // defines our own ivy config that wont get packaged as part of your app
+  // notice that it extends the Compile scope, so we inherit that classpath
+  val Config = config("nucleus") extend Compile
+
+  // our task
+  val enhance = TaskKey[Unit]("enhance")
+  
+  // implementation
+  val settings:Seq[Project.Setting[_]] = Seq(
+    // let ivy know about our "nucleus" config
+    ivyConfigurations += Config,
+    // add the enhancer dependency to our nucleus ivy config
+    libraryDependencies += "org.datanucleus" % "datanucleus-enhancer" % "3.0.1" % Config.name,
+    // fetch the classpath for our nucleus config
+    // as we inherit Compile this will be the fullClasspath for Compile + "datanucleus-enhancer" jar 
+    //fullClasspath in Config <<= (classpathTypes in enhance, update).map{(ct, report) =>
+    //  Classpaths.managedJars(Config, ct, report)
+    //},
+    // add more parameters as your see fit
+    //enhance in Config <<= (fullClasspath in Config, runner, streams).map{(cp, run, s) =>
+    enhance <<= Seq(compile in Compile).dependOn,
+    enhance in Config <<= (dependencyClasspath in Compile, classDirectory in Compile, runner, streams)
+        map { (deps, classes, run, s) => 
+
+      // Properties
+      val classpath = (deps.files :+ classes)
+      
+      
+      // the classpath is attributed, we only want the files
+      //val classpath = cp.files
+      // the options passed to the Enhancer... 
+      val options = Seq("-v") ++ findAllClassesRecursively(classes).map(_.getAbsolutePath)
+      Thread.sleep(1000)
+      
+      // run returns an option of errormessage
+      val result = run.run("org.datanucleus.enhancer.DataNucleusEnhancer", classpath, options, s.log)
+      // if there is an errormessage, throw an exception
+      result.foreach(sys.error)
+    }
+  )
+  
+  def findAllClassesRecursively(dir: File): Seq[File] = {
+    if (dir.isDirectory) {
+      val files = dir.listFiles
+      files.flatMap(findAllClassesRecursively(_)) 
+    } else if (dir.getName.endsWith(".class")) {
+      Seq(dir)
+    } else {
+      Seq.empty
+    }
+  }
 }
