@@ -40,10 +40,10 @@ class File {
 }
 
 object File {
-	def getById(id: Long)(implicit pm: ScalaPersistenceManager): Option[File] = {
-	  DataStore.execute { tpm =>
+	def getById(id: Long): Option[File] = {
+	  DataStore.execute { pm =>
 	    val cand = QFile.candidate
-	    tpm.query[File].filter(cand.id.eq(id)).executeOption
+	    pm.query[File].filter(cand.id.eq(id)).executeOption
 	  }
 	}
 }

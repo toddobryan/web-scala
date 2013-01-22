@@ -1,7 +1,9 @@
 compileWithAjax = (editor) -> 
     code = editor.getValue()
-    $.post('/compile', $.param({line : code}), (result) -> $('#prev-content').html(""))
-	interactions.setValue("")
+    $.post('/compile', $.param({line : code}), (result) -> 
+    	$('#prev-content').html("")
+    	$('#compiler-message').append(result))
+	### interactions.setValue("") ###
 	$('body').load(prettyPrint())
 	
 

@@ -21,11 +21,11 @@ object DataStore {
 	implicit val pm: ScalaPersistenceManager = DataStore.pm
     pm.beginTransaction()
     val r = block(pm)
-    pm.commitTransactionAndClose()
+    pm.commitTransaction()
     r
   }
   
-  def execute[A](block: (ScalaPersistenceManager => A))(implicit pm: ScalaPersistenceManager): A = {
+  def execute[A](block: (ScalaPersistenceManager => A))(implicit pm: ScalaPersistenceManager = null): A = {
     if (pm != null) block(pm)
     else DataStore.withTransaction( tpm => block(tpm) )
   }

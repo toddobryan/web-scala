@@ -18,6 +18,8 @@ object TestData {
   
   
   def load = {
+    val dbFile = new java.io.File("data.h2.db")
+    dbFile.delete()
     DataStore.execute { tpm =>
         for(u <- users) {
           tpm.makePersistent(u)

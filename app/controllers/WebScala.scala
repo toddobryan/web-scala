@@ -37,19 +37,17 @@ object WebScala extends Controller {
       case fst :: rst => fst
     }
     val start = HtmlRepl.out.getBuffer.length
-    HtmlRepl.repl.compileString(content) match {
-      case true => Ok("No errors in compiling this file!")
-      case false => Ok(HtmlRepl.out.getBuffer.substring(start))
+    HtmlRepl.repl.interpret(content) match {
+      case IntpResults.Success => Ok("No errors in compiling this file!")
+      case _ => Ok(HtmlRepl.out.getBuffer.substring(start))
     }
   }
   
   def showFile(id: Long) = Action { implicit req =>
-    	implicit val pm: ScalaPersistenceManager = DataStore.pm
-    	val maybeFile = File.getById(id)
+        val maybeFile = File.getById(id)
     	maybeFile match {
-    	  // case Some(f) => views.html.webscala.showFile(f)
-    	  // case None => views.html.webscala.notFound()
-    	  case _ => Ok(views.html.index("Dog"))
+    	  case Some(f) => Ok(views.html.webscala.getFile(f))
+    	  case None => Ok(views.html.index("apple"))
     	}
     }
 }
