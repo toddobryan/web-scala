@@ -10,18 +10,20 @@ object ApplicationBuild extends Build {
   val appDependencies = Seq(
     // Add your project dependencies here,
     jdbc,
-    "org.scala-lang" % "scala-compiler" % "2.10.0-RC1",
-    "org.scala-lang" % "scala-swing" % "2.10.0-RC1",
-    "org.scala-lang" % "scala-actors" % "2.10.0-RC1",
-    "org.scalatest" % "scalatest_2.10.0-RC1" % "2.0.M4" % "test",
+    "org.scala-lang" % "scala-compiler" % "2.10.0",
+    "org.scala-lang" % "scala-swing" % "2.10.0",
+    "org.scala-lang" % "scala-actors" % "2.10.0",
+    "org.scalatest" % "scalatest_2.10.0" % "2.0.M5" % "test",
     "commons-codec" % "commons-codec" % "1.6",
 
     "com.h2database" % "h2" % "1.3.166",
     "javax.jdo" % "jdo-api" % "3.0",
-    "org.datanucleus" % "datanucleus-core" % "3.1.3",
+    "org.datanucleus" % "datanucleus-core" % "3.1.4",
     "org.datanucleus" % "datanucleus-api-jdo" % "3.1.3",
     "org.datanucleus" % "datanucleus-enhancer" % "3.1.1",
-    "org.datanucleus" % "datanucleus-jdo-query" % "3.0.2"
+    "org.datanucleus" % "datanucleus-jdo-query" % "3.0.2",
+    "org.datanucleus" % "datanucleus-rdbms" % "3.1.4",
+    "org.datanucleus" % "datanucleus-jodatime" % "3.1.1"
 
   )
 
