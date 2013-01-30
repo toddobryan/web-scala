@@ -60,9 +60,9 @@ object NumericField {
   }
   
   def conversionFunction[T](implicit man: Manifest[T]): ((String => T), (String => String)) = {
-    if (man.erasure == classOf[Int]) {
+    if (man.runtimeClass == classOf[Int]) {
       ((s: String) => s.toInt.asInstanceOf[T], (s: String) => "This value must be a positive or negative whole number.")
-    } else if (man.erasure == classOf[Double]) {
+    } else if (man.runtimeClass == classOf[Double]) {
       ((s: String) => s.toDouble.asInstanceOf[T], (s: String) => "This value must be a number.")
     } else {
       throw new Exception("Numeric field only supported for Int and Double.")

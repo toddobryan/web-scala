@@ -15,6 +15,7 @@ object ApplicationBuild extends Build {
     "org.scala-lang" % "scala-actors" % "2.10.0",
     "org.scalatest" % "scalatest_2.10.0" % "2.0.M5" % "test",
     "commons-codec" % "commons-codec" % "1.6",
+    "javax.mail" % "mail" % "1.4.5",
 
     "com.h2database" % "h2" % "1.3.166",
     "javax.jdo" % "jdo-api" % "3.0",
@@ -31,6 +32,7 @@ object ApplicationBuild extends Build {
   val main = play.Project(appName, appVersion, appDependencies).settings(
     // Add your own project settings here
     ((resolvers += "Sonatype Public" at "https://oss.sonatype.org/content/groups/public/") +:
+     (resolvers += "Java.net" at "http://download.java.net/maven/2/") +:
      (scalacOptions ++= Seq("-deprecation", "-feature")) +:
       Nucleus.settings): _*
     
