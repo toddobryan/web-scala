@@ -14,6 +14,7 @@ class File {
   private[this] var _title: String = _
   @Persistent(defaultFetchGroup = "true")
   private[this] var _owner: User = _
+  @Column(length=1048576) // 1MB
   private[this] var _content: String = _
   
   def this(title: String, owner: User, content: String) {
@@ -43,7 +44,7 @@ object File {
 	def getById(id: Long): Option[File] = {
 	  DataStore.execute { pm =>
 	    val cand = QFile.candidate
-	    pm.query[File].filter(cand.id.eq(id)).executeOption
+	    pm.query[File].filter(cand.id.eq(id)).executeOption()
 	  }
 	}
 }
@@ -63,7 +64,7 @@ trait QFile extends PersistableExpression[File] {
 }
 
 object QFile {
-  def apply(parent: PersistableExpression[_], name: String, depth: Int): QFile = {
+  def apply(parent: PersistableExpression[File], name: String, depth: Int): QFile = {
     new PersistableExpressionImpl[File](parent, name) with QFile
   }
   

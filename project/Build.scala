@@ -16,6 +16,7 @@ object ApplicationBuild extends Build {
     "org.scalatest" % "scalatest_2.10.0" % "2.0.M5" % "test",
     "commons-codec" % "commons-codec" % "1.6",
     "javax.mail" % "mail" % "1.4.5",
+    "org.mindrot" % "jbcrypt" % "0.3m",
 
     "com.h2database" % "h2" % "1.3.166",
     "javax.jdo" % "jdo-api" % "3.0",

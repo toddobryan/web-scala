@@ -1,55 +1,98 @@
 package models.auth
 
+import scala.collection.mutable
+import scala.collection.JavaConverters._
+
 import javax.jdo.annotations._
 import org.datanucleus.api.jdo.query._
 import org.datanucleus.query.typesafe._
+import org.joda.time.DateTime
+import org.mindrot.jbcrypt.BCrypt
 
 @PersistenceCapable(detachable="true")
 class User {
   @PrimaryKey
   @Persistent(valueStrategy=IdGeneratorStrategy.INCREMENT)
   private[this] var _id: Long = _
+  def id: Long = _id
   
   @Unique
   @Column(allowsNull="false")
   private[this] var _username: String = _
-
-  private[this] var _first: String = _
-  private[this] var _last: String = _
-  //TODO: need better types for email and password
-  private[this] var _email: String = _
-  private[this] var _password: String = _
-  
-  def this(username: String, first: String = null, last: String = null, 
-      email: String = null, password: String = null) {
-    this()
-    _username = username
-    _first = first
-    _last = last
-    _email = email
-    _password = password
-  }
-  
-  def id: Long = _id
-  
   def username: String = _username
   def username_=(theUsername: String) { _username = theUsername }
   
+  private[this] var _first: String = _
   def first: Option[String] = Option(_first)
   def first_=(theFirst: Option[String]) { _first = theFirst.getOrElse(null) }
   def first_=(theFirst: String) { _first = theFirst }
   
+  private[this] var _last: String = _
   def last: Option[String] = Option(_last)
   def last_=(theLast: Option[String]) { _last = theLast.getOrElse(null) }
   def last_=(theLast: String) { _last = theLast }
   
+  @Column(allowsNull="false")
+  private[this] var _isActive: Boolean = _
+  def isActive: Boolean = _isActive
+  def isActive_=(theIsActive: Boolean) { _isActive = theIsActive }
+  
+  @Column(allowsNull="false")
+  private[this] var _isSuperUser: Boolean = _
+  def isSuperUser: Boolean = _isSuperUser
+  def isSuperUser_=(theIsSuperUser: Boolean) { _isSuperUser = theIsSuperUser }
+  
+  @Column(allowsNull="false")
+  private[this] var _dateJoined: java.sql.Timestamp = _
+  def dateJoined: DateTime = new DateTime(_dateJoined.getTime)
+  def dateJoined_=(theDateJoined: DateTime) { _dateJoined = new java.sql.Timestamp(theDateJoined.getMillis) }
+  
+  private[this] var _lastLogin: java.sql.Timestamp = _
+  def lastLogin: Option[DateTime] = if (_lastLogin == null) None else Some(new DateTime(_lastLogin.getTime))
+  def lastLogin_=(theLastLogin: DateTime) { _lastLogin = new java.sql.Timestamp(theLastLogin.getMillis) }
+  
+  //TODO: check email validity
+  private[this] var _email: String = _
   def email: Option[String] = Option(_email)
   def email_=(theEmail: Option[String]) { _email = theEmail.getOrElse(null) }
   def email_=(theEmail: String) { _email = theEmail }
   
-  def password: Option[String] = Option(_password)
-  def password_=(thePassword: Option[String]) { _password = thePassword.getOrElse(null) }
-  def password_=(thePassword: String) { _password = thePassword }
+  // Uses BCrypt for hashing
+  // TODO: allow other hashes
+  private[this] var _passwordHash: String = _
+  def setPassword(password: String) { 
+    if (password == null) _passwordHash = null
+    else BCrypt.hashpw(password, BCrypt.gensalt())
+  }
+  def passwordChecks(password: String): Boolean = (_passwordHash != null) && BCrypt.checkpw(password, _passwordHash)
+  
+  @Join
+  private[this] var _permissions: java.util.Set[Permission] = _
+  def permissions: mutable.Set[Permission] = _permissions.asScala
+  def permissions_=(thePermissions: mutable.Set[Permission]) { _permissions = thePermissions.asJava }
+  
+  @Join
+  private[this] var _groups: java.util.Set[Group] = _
+  def groups: mutable.Set[Group] = _groups.asScala
+  def groups_=(theGroups: mutable.Set[Group]) { _groups = theGroups.asJava }
+  
+  def this(username: String, first: String = null, last: String = null, isActive: Boolean = true, isSuperUser: Boolean = false,
+      dateJoined: => DateTime = DateTime.now(), lastLogin: Option[DateTime] = None, email: String = null, password: String = null) {
+    this()
+    username_=(username)
+    first_=(first)
+    last_=(last)
+    isActive_=(isActive)
+    isSuperUser_=(isSuperUser)
+    dateJoined_=(dateJoined)
+    lastLogin match {
+      case None => _lastLogin = null
+      case Some(date) => lastLogin_=(date)
+    }
+    email_=(email)
+    setPassword(password)
+    permissions_=(mutable.Set[Permission]())
+  }
 }
 
 object User {
@@ -71,9 +114,6 @@ trait QUser extends PersistableExpression[User] {
     
   private[this] lazy val _email: StringExpression = new StringExpressionImpl(this, "_email")
   def email: StringExpression = _email
-  
-  private[this] lazy val _password: StringExpression = new StringExpressionImpl(this, "_password")
-  def password: StringExpression = _password
 }
 
 object QUser {
