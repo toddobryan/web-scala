@@ -1,4 +1,4 @@
-@(loginForm: forms.Binding)
+@(loginForm: forms.Binding)(implicit req: models.auth.VisitRequest[_])
 
 @main("Login") {
   @loginForm.asHtml

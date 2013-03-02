@@ -1,21 +1,22 @@
 package controllers
 
 import scala.tools.nsc.interpreter.{ Results => IntpResults }
-
 import play.api._
 import play.api.mvc._
 import webscala.HtmlRepl
 import scalajdo._
 import models.files._
+import models.auth.VisitAction
+import models.auth.Authenticated
 
 object WebScala extends Controller {
   //lazy val repl = new HtmlRepl()
 
-  def ide = Action {
+  def ide = Authenticated { implicit req =>
     Ok(views.html.webscala.ide())
   }
 
-  def interpret = Action { implicit req =>
+  def interpret = VisitAction { implicit req =>
     println(req.body.asFormUrlEncoded.getOrElse(Map()))
     val line = req.body.asFormUrlEncoded.getOrElse(Map()).getOrElse("line", Nil) match {
       case Nil => ""
@@ -30,7 +31,7 @@ object WebScala extends Controller {
     }
   }
   
-  def compile = Action { implicit req =>
+  def compile = VisitAction { implicit req =>
     println("Compiling content of files")
     val content = req.body.asFormUrlEncoded.getOrElse(Map()).getOrElse("line", Nil) match {
       case Nil => ""
@@ -43,7 +44,7 @@ object WebScala extends Controller {
     }
   }
   
-  def showFile(id: Long) = Action { implicit req =>
+  def showFile(id: Long) = VisitAction { implicit req =>
         val maybeFile = File.getById(id)
     	maybeFile match {
     	  case Some(f) => Ok(views.html.webscala.getFile(f))

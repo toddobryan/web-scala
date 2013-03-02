@@ -42,11 +42,13 @@ class User {
   def isSuperUser: Boolean = _isSuperUser
   def isSuperUser_=(theIsSuperUser: Boolean) { _isSuperUser = theIsSuperUser }
   
+  @Persistent(defaultFetchGroup="true")
   @Column(allowsNull="false")
   private[this] var _dateJoined: java.sql.Timestamp = _
   def dateJoined: DateTime = new DateTime(_dateJoined.getTime)
   def dateJoined_=(theDateJoined: DateTime) { _dateJoined = new java.sql.Timestamp(theDateJoined.getMillis) }
   
+  @Persistent(defaultFetchGroup="true")
   private[this] var _lastLogin: java.sql.Timestamp = _
   def lastLogin: Option[DateTime] = if (_lastLogin == null) None else Some(new DateTime(_lastLogin.getTime))
   def lastLogin_=(theLastLogin: DateTime) { _lastLogin = new java.sql.Timestamp(theLastLogin.getMillis) }
@@ -62,7 +64,7 @@ class User {
   private[this] var _passwordHash: String = _
   def setPassword(password: String) { 
     if (password == null) _passwordHash = null
-    else BCrypt.hashpw(password, BCrypt.gensalt())
+    else _passwordHash = BCrypt.hashpw(password, BCrypt.gensalt())
   }
   def passwordChecks(password: String): Boolean = (_passwordHash != null) && BCrypt.checkpw(password, _passwordHash)
   
@@ -93,6 +95,8 @@ class User {
     setPassword(password)
     permissions_=(mutable.Set[Permission]())
   }
+  
+  def fullName(): String = first.getOrElse("(no first name entered)") + " " + last.getOrElse("(no last name entered)")
 }
 
 object User {

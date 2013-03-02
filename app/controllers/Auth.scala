@@ -26,7 +26,7 @@ object LoginForm extends Form {
 }
 
 object Auth extends Controller {
-  def login = VisitAction { implicit req => 
+  def login() = VisitAction { implicit req => 
     if (req.method == Method.GET) {
       Ok(views.html.auth.login(Binding(LoginForm)))
     } else {
@@ -38,9 +38,14 @@ object Auth extends Controller {
           val redirectUrl: Option[String] = req.visit.redirectUrl
           req.visit.redirectUrl = None
           DataStore.pm.makePersistent(req.visit)
-          redirectUrl.map(Redirect(_)).getOrElse(Redirect(routes.Application.index())).flashing("message" -> "You have successfully logged in.")
+          redirectUrl.map(Redirect(_)).getOrElse(Redirect(routes.Application.index())).flashing("success" -> "You have successfully logged in.")
         }
       }
     }
+  }
+  
+  def logout() = VisitAction { implicit req =>
+    DataStore.pm.deletePersistent(req.visit)
+    Redirect(routes.Application.index()).flashing("success" -> "You have successfully logged out.") 
   }
 }

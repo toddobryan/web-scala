@@ -20,12 +20,12 @@ object VisitAction {
       val visitReq = new VisitRequest[A](request)
       val res = f(visitReq)
       if (JDOHelper.isDeleted(visitReq.visit)) {
-        pm.commitTransactionAndClose()
+        pm.commitTransaction()
         res.withNewSession
       } else {
         visitReq.visit.expiration = System.currentTimeMillis + Visit.visitLength
         pm.makePersistent(visitReq.visit)
-        pm.commitTransactionAndClose()
+        pm.commitTransaction()
         if (request.session.get(visitReq.visit.uuid).isDefined) res
         else res.withSession("visit" -> visitReq.visit.uuid)
       }
@@ -38,14 +38,17 @@ object VisitAction {
 }
 
 object Authenticated {
-  def apply(f: User => VisitRequest[AnyContent] => PlainResult) = VisitAction( req => {
+  def apply(f: VisitRequest[AnyContent] => PlainResult) = VisitAction( implicit req => {
 	req.visit.user match {
 	  case None => {
 	    req.visit.redirectUrl = req.path
 	    DataStore.pm.makePersistent(req.visit)
-	    Results.Redirect(controllers.routes.Auth.login()).flashing("message" -> "You must log in to view that page.")
+	    Results.Redirect(controllers.routes.Auth.login()).flashing("error" -> "You must log in to view that page.")
 	  }
-	  case Some(user) => f(user)(req)
+	  case Some(user) => {
+	    implicit val u: User = user
+	    f(req)
+	  }
 	}
   })
 }

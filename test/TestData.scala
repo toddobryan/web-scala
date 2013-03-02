@@ -3,9 +3,9 @@ import models.files._
 import scalajdo._
 
 object TestData {
-  val user1: User = new User("jmiller14")
-  val user2: User = new User("amaniraj14")
-  val user3: User = new User("cjin14")
+  val user1: User = new User("jmiller14", "Jim", "Miller", email="jmiller@nada.com", password="temp123")
+  val user2: User = new User("amaniraj14", "Aaditya", "Manirajan", password="temp123")
+  val user3: User = new User("cjin14", "Choong Won", "Jin")
   val users = List(user1, user2, user3)
   
   val file1: File = new File("First File", user1,
@@ -17,9 +17,9 @@ object TestData {
   val files = List(file1, file2, file3)
   
   
-  def load = {
+  def load() {
     val dbFile = new java.io.File("data.h2.db")
-    dbFile.delete()
+    if (dbFile.exists) dbFile.delete()
     DataStore.execute { tpm =>
         for(u <- users) {
           tpm.makePersistent(u)
@@ -27,6 +27,6 @@ object TestData {
         for(f <- files) {
           tpm.makePersistent(f)
         }
-    }(null)
+    }
   }
 }
