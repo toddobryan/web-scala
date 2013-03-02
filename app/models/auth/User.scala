@@ -2,12 +2,12 @@ package models.auth
 
 import scala.collection.mutable
 import scala.collection.JavaConverters._
-
 import javax.jdo.annotations._
 import org.datanucleus.api.jdo.query._
 import org.datanucleus.query.typesafe._
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
+import scalajdo.DataStore
 
 @PersistenceCapable(detachable="true")
 class User {
@@ -96,7 +96,14 @@ class User {
 }
 
 object User {
+  def getByUsername(username: String): Option[User] = {
+    val cand = QUser.candidate
+    DataStore.pm.query[User].filter(cand.username.eq(username)).executeOption()
+  }
   
+  def authenticate(username: String, password: String): Option[User] = {
+    getByUsername(username).filter(_.passwordChecks(password))
+  }
 }
 
 trait QUser extends PersistableExpression[User] {
