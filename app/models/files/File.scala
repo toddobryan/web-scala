@@ -42,10 +42,13 @@ class File {
 
 object File {
 	def getById(id: Long): Option[File] = {
-	  DataStore.execute { pm =>
-	    val cand = QFile.candidate
-	    pm.query[File].filter(cand.id.eq(id)).executeOption()
-	  }
+	  val cand = QFile.candidate
+	  DataStore.pm.query[File].filter(cand.id.eq(id)).executeOption
+	}
+	
+	def getByOwner(owner: User): List[File] = {
+	  val cand = QFile.candidate
+	  DataStore.pm.query[File].filter(cand.owner.eq(owner)).executeList
 	}
 }
 

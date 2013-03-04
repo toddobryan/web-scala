@@ -1,6 +1,7 @@
 compileWithAjax = (editor) -> 
     code = editor.getValue()
-    $.post('/compile', $.param({line : code}), (result) -> 
+    fileId = $('#info').attr('fileId')
+    $.post('/compile/' + fileId, $.param({line : code}), (result) -> 
     	$('#prev-content').html("")
     	$('#compiler-message').append(result))
 	### interactions.setValue("") ###
@@ -22,10 +23,11 @@ $('document').ready(() ->
     ###
     Setting up the file editor.
     ###
+    fileContent = $('#info').html()
     editor = ace.edit("editor")
     editor.setTheme("ace/theme/chrome")
     editor.getSession().setMode("ace/mode/scala")
-    editor.setValue("")
+    editor.setValue(fileContent)
     document.getElementById('editor').style.fontSize='20px';
     editor.commands.addCommand({
         name: 'myCommand',

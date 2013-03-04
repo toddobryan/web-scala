@@ -11,7 +11,7 @@
 
 @main("File Editor - " + file.title, scripts) {
 	<div class="span10">
-	<h1>@file.title</h1>
+	<h2>@file.title</h2>
 	<form id="file" action="./compile"> 
 		<div id="editor">
 		</div>
@@ -24,5 +24,6 @@
 		<div id="interactions">
 		</div>
 	</form>
+	<div id="info" class="hidden" fileId=@file.id>@file.content</div>
 	</div>
 }

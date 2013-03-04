@@ -24,3 +24,7 @@ div#editor {
 #prev-content div, #entry {
 	display: inline;
 }
+
+.hidden {
+	display: none;
+}
