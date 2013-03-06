@@ -6,11 +6,13 @@ import play.api.mvc._
 import webscala.HtmlRepl
 import scalajdo._
 import models.files._
+import models.auth._
 import models.auth.VisitAction
 import models.auth.Authenticated
 import org.joda.time._
 import forms._
 import forms.fields._
+import forms.validators._
 
 object WebScala extends Controller {
   //lazy val repl = new HtmlRepl()
@@ -55,9 +57,16 @@ object WebScala extends Controller {
     }
   }
   
-  object newFileForm extends Form {
+  case class NewFileForm(val user: User) extends Form {
     val fileName = new TextField("fileName")
     def fields = List(fileName)
+    
+    override def validate(vb: ValidBinding): ValidationError = {
+      File.getByOwner(user).filter(_.title == vb.valueOf(NewFileForm(user).fileName).trim) match {
+        case Nil => ValidationError(Nil)
+        case file :: _ => ValidationError(List("File with this name already exists."))
+      }
+    }
   }
   
   def newFile = VisitAction { implicit req =>
@@ -65,12 +74,12 @@ object WebScala extends Controller {
         case None => Redirect(routes.Application.index()).flashing(("error" -> "You must be logged in to create a file"))
         case Some(user) => {
           if(req.method == "GET") {
-            Ok(views.html.webscala.newFile(Binding(newFileForm)))
+            Ok(views.html.webscala.newFile(Binding(NewFileForm(user))))
           } else {	
-            Binding(newFileForm, req) match {
+            Binding(NewFileForm(user), req) match {
               case ib: InvalidBinding => Ok(views.html.webscala.newFile(ib))
               case vb: ValidBinding => {
-                val name = vb.valueOf(newFileForm.fileName)
+                val name = vb.valueOf(NewFileForm(user).fileName).trim()
                 val file = new File(name, user, "/* Enter Code Here */", Some(DateTime.now))
                 DataStore.pm.makePersistent(file)
                 val id = File.getByOwner(user).filter(_.title == name).head.id

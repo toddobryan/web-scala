@@ -103,7 +103,6 @@ object File {
             </small>
 	    </li>
 	  }}
-	  <li><a href={"/createFile"}><em>Create a File</em></a></li>
 	  </div>
 	}
 }

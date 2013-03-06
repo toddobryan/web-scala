@@ -3,10 +3,10 @@ compileWithAjax = (editor) ->
     fileId = $('#info').attr('fileId')
     $.post('/compile/' + fileId, $.param({line : code}), (result) -> 
     	$('#prev-content').html("")
-    	$('#compiler-message').append(result))
+    	$('#compiler-message').append(result)
+    	)
 	### interactions.setValue("") ###
 	$('body').load(prettyPrint())
-	
 
 postToAjax = (editor) -> 
     code = editor.getValue()
@@ -35,6 +35,7 @@ $('document').ready(() ->
         bindKey: {win: 'Ctrl-Return',  mac: 'Command-Return'},
         exec: (editor) -> compileWithAjax(editor)
     })
+    $('#compileButton').click(() -> compileWithAjax(editor))
     ###
     Setting up the interactions area.
     ###

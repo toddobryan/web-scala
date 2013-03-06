@@ -10,20 +10,19 @@
 }
 
 @main("File Editor - " + file.title, scripts) {
-	<div class="span10">
 	<h2>@file.title</h2>
-	<form id="file" action="./compile"> 
+	<form id="file" action=@{"./compile/" + file.id}> 
 		<div id="editor">
 		</div>
 	</form>
+	<button id="compileButton" type="button">Compile and Save</button>
+    <div id="compiler-message">
+	</div>
 	<div id="prev-content">
-	  <div id="compiler-message">
-	  </div>
 	</div>
 	<form id="code" action="./interpet">
 		<div id="interactions">
 		</div>
 	</form>
 	<div id="info" class="hidden" fileId=@file.id fileContent="@file.content"></div>
-	</div>
 }
