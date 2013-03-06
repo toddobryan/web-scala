@@ -15,6 +15,7 @@ GET     /assets/*file               controllers.Assets.at(path="/public", file)
 
 GET     /ide                        controllers.WebScala.ide
 POST    /interpret                  controllers.WebScala.interpret
+GET     /compile/:id                controllers.WebScala.compile(id: Long)
 POST    /compile/:id                controllers.WebScala.compile(id: Long)
 
 # Files

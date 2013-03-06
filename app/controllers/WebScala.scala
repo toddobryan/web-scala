@@ -8,6 +8,7 @@ import scalajdo._
 import models.files._
 import models.auth.VisitAction
 import models.auth.Authenticated
+import org.joda.time._
 import forms._
 import forms.fields._
 
@@ -43,6 +44,7 @@ object WebScala extends Controller {
       case None => false
       case Some(f) => {
         f.content_=(content)
+        f.lastModified_=(DateTime.now)
         DataStore.pm.makePersistent(f)
       }
     }
@@ -69,7 +71,7 @@ object WebScala extends Controller {
               case ib: InvalidBinding => Ok(views.html.webscala.newFile(ib))
               case vb: ValidBinding => {
                 val name = vb.valueOf(newFileForm.fileName)
-                val file = new File(name, user, "/* Enter Code Here */")
+                val file = new File(name, user, "/* Enter Code Here */", Some(DateTime.now))
                 DataStore.pm.makePersistent(file)
                 val id = File.getByOwner(user).filter(_.title == name).head.id
                 Redirect("/file/" + id).flashing(("success" -> "File Created"))

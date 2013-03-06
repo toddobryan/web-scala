@@ -4,9 +4,5 @@
   case None => {
     <span id="EmptyFileInfo"></span>
   }
-  case Some(user) => {
-    <li class="divider"></li>
-    <li class="navheader">Files</li>
-    <li><a href="#">A File</a></li>
-  }
+  case Some(user) => fileSidebar(user)
 })

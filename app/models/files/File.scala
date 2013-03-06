@@ -3,6 +3,7 @@ package models.files
 import javax.jdo.annotations._
 import org.datanucleus.api.jdo.query._
 import org.datanucleus.query.typesafe._
+import org.joda.time.DateTime
 import scalajdo._
 import models.auth._
 
@@ -16,12 +17,18 @@ class File {
   private[this] var _owner: User = _
   @Column(length=1048576) // 1MB
   private[this] var _content: String = _
+  @Persistent(defaultFetchGroup= "true")
+  private[this] var _lastModified: java.sql.Timestamp = _
   
-  def this(title: String, owner: User, content: String) {
+  def this(title: String, owner: User, content: String, lastModified: Option[DateTime] = None) {
     this()
     _title = title
     _owner = owner
     _content = content
+    lastModified match {
+      case None => _lastModified = null
+      case Some(date) => lastModified_=(date)
+    }
   }
   
   def id: Long = _id
@@ -35,11 +42,39 @@ class File {
   def content: String = _content
   def content_=(theContent: String) = (_content = theContent)
   
+  def lastModified: Option[DateTime] = if(_lastModified == null) None else Some(new DateTime(_lastModified.getTime))
+  def lastModified_=(theDate: DateTime) = (_lastModified = new java.sql.Timestamp(theDate.getMillis()))
+  
   override def toString = {
     "%s -- %s".format(title, owner)
   }
+  
+  def recentSort(file: File): Boolean = {
+    lastModified match {
+      case None => false
+      case Some(dt1) => file.lastModified match {
+        case None => true
+        case Some(dt2) => dt1.getMillis > dt2.getMillis
+      }
+    }
+  }
+  
+  def timeString = lastModified match {
+    case None => ""
+    case Some(date) => {
+      val now = DateTime.now()
+      val timeSince = now.getMillis - date.getMillis
+      val millInADay = 86400000
+      if(timeSince < millInADay && now.getDayOfMonth == date.getDayOfMonth)
+        "d:%02d".format(date.getHourOfDay, date.getMinuteOfHour)
+      else if (timeSince < 2 * millInADay && now.getDayOfMonth - 1 == date.getDayOfMonth)
+        "Yesterday" + "%d:%02d".format(date.getHourOfDay, date.getMinuteOfHour)
+      else
+        "%02d-%02d".format(date.getDayOfMonth, date.getMonthOfYear)
+    }
+  }
 }
-
+  
 object File {
 	def getById(id: Long): Option[File] = {
 	  val cand = QFile.candidate
@@ -49,6 +84,25 @@ object File {
 	def getByOwner(owner: User): List[File] = {
 	  val cand = QFile.candidate
 	  DataStore.pm.query[File].filter(cand.owner.eq(owner)).executeList
+	}
+	
+	def mostRecentFour(owner: User): List[File] = {
+	  getByOwner(owner).sortWith(_ recentSort _).take(4)
+	}
+	
+	def fileSidebar(files: List[File]): scala.xml.Elem = {
+	  <div id="files">
+	  {for(file <- files) yield {
+	    <li>
+		    <a href={"/file/" + file.id}>
+		    {file.title}
+	    	<br />
+            <div class="muted">{file.timeString}</div>
+            </a>
+	    </li>
+	  }}
+	  <li><a href={"/createFile"}><em>Create a File</em></a></li>
+	  </div>
 	}
 }
 

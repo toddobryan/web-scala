@@ -7,14 +7,7 @@ object TestData {
   val user2: User = new User("amaniraj14", "Aaditya", "Manirajan", password="temp123")
   val user3: User = new User("cjin14", "Choong Won", "Jin")
   val users = List(user1, user2, user3)
-  
-  val file1: File = new File("First File", user1,
-		  					 "val x = 2")
-  val file2: File = new File("Another File", user2,
-		  					 "class Dog { def bark = \"woof!\"")
-  val file3: File = new File("Third File", user3,
-		  					 "abstract class Animal")
-  val files = List(file1, file2, file3)
+
   
   
   def load() {
@@ -23,9 +16,6 @@ object TestData {
     DataStore.execute { tpm =>
         for(u <- users) {
           tpm.makePersistent(u)
-        }
-        for(f <- files) {
-          tpm.makePersistent(f)
         }
     }
   }
