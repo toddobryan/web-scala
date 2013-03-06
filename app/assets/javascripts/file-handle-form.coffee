@@ -23,11 +23,12 @@ $('document').ready(() ->
     ###
     Setting up the file editor.
     ###
-    fileContent = $('#info').html()
+    fileContent = $('#info').attr('fileContent')
     editor = ace.edit("editor")
     editor.setTheme("ace/theme/chrome")
     editor.getSession().setMode("ace/mode/scala")
     editor.setValue(fileContent)
+    editor.clearSelection()
     document.getElementById('editor').style.fontSize='20px';
     editor.commands.addCommand({
         name: 'myCommand',

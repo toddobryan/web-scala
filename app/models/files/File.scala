@@ -66,7 +66,7 @@ class File {
       val timeSince = now.getMillis - date.getMillis
       val millInADay = 86400000
       if(timeSince < millInADay && now.getDayOfMonth == date.getDayOfMonth)
-        "d:%02d".format(date.getHourOfDay, date.getMinuteOfHour)
+        "%d:%02d".format(date.getHourOfDay, date.getMinuteOfHour)
       else if (timeSince < 2 * millInADay && now.getDayOfMonth - 1 == date.getDayOfMonth)
         "Yesterday" + "%d:%02d".format(date.getHourOfDay, date.getMinuteOfHour)
       else
@@ -94,11 +94,13 @@ object File {
 	  <div id="files">
 	  {for(file <- files) yield {
 	    <li>
+            <small>
 		    <a href={"/file/" + file.id}>
 		    {file.title}
 	    	<br />
             <div class="muted">{file.timeString}</div>
             </a>
+            </small>
 	    </li>
 	  }}
 	  <li><a href={"/createFile"}><em>Create a File</em></a></li>
