@@ -3,6 +3,7 @@ package models.auth
 import scala.collection.mutable
 import scala.collection.JavaConverters._
 import javax.jdo.annotations._
+import models.files._
 import org.datanucleus.api.jdo.query._
 import org.datanucleus.query.typesafe._
 import org.joda.time.DateTime
@@ -78,6 +79,11 @@ class User {
   def groups: mutable.Set[Group] = _groups.asScala
   def groups_=(theGroups: mutable.Set[Group]) { _groups = theGroups.asJava }
   
+  @Persistent(defaultFetchGroup = "true")
+  private[this] var _root: Directory = _
+  def root: Directory = _root
+  def root_=(theRoot: Directory) {_root = theRoot}
+  
   def this(username: String, first: String = null, last: String = null, isActive: Boolean = true, isSuperUser: Boolean = false,
       dateJoined: => DateTime = DateTime.now(), lastLogin: Option[DateTime] = None, email: String = null, password: String = null) {
     this()
@@ -94,6 +100,7 @@ class User {
     email_=(email)
     setPassword(password)
     permissions_=(mutable.Set[Permission]())
+    root_=(new Directory("root", this, Nil))
   }
   
   def fullName(): String = first.getOrElse("(no first name entered)") + " " + last.getOrElse("(no last name entered)")
@@ -147,5 +154,3 @@ object QUser {
   def variable(name: String): QUser = QUser(classOf[User], name, ExpressionType.VARIABLE)
 
 }
-
-

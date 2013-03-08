@@ -7,8 +7,10 @@ import org.joda.time.DateTime
 import scalajdo._
 import models.auth._
 
+abstract class Item
+
 @PersistenceCapable(detachable="true")
-class File {
+class File extends Item {
   @PrimaryKey
   @Persistent(valueStrategy=IdGeneratorStrategy.INCREMENT)
   private[this] var _id: Long = _
@@ -72,6 +74,15 @@ class File {
       else
         "%02d-%02d".format(date.getDayOfMonth, date.getMonthOfYear)
     }
+  }
+  
+  // F.0. -> File Organizer
+  def asHtmlFO: scala.xml.Elem = {
+    <li class="file-fo">
+      <div class="file-title">{title}</div>
+      <div class="file-modified">{lastModified}</div>
+      <div class="file-delete">Delete</div>
+    </li>
   }
 }
   
