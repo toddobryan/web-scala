@@ -100,7 +100,7 @@ class User {
     email_=(email)
     setPassword(password)
     permissions_=(mutable.Set[Permission]())
-    root_=(new Directory("root", this, Nil))
+    root_=(new Directory("Home", this, Nil))
   }
   
   def fullName(): String = first.getOrElse("(no first name entered)") + " " + last.getOrElse("(no last name entered)")

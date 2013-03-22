@@ -15,10 +15,16 @@ GET     /assets/*file               controllers.Assets.at(path="/public", file)
 
 GET     /ide                        controllers.WebScala.ide
 POST    /interpret                  controllers.WebScala.interpret
-GET     /compile/:id                controllers.WebScala.compile(id: Long)
-POST    /compile/:id                controllers.WebScala.compile(id: Long)
+GET     /compile/*titles            controllers.WebScala.compile(titles: String)
+POST    /compile/*titles            controllers.WebScala.compile(titles: String)
 
 # Files
-GET     /createFile					controllers.WebScala.newFile
-POST    /createFile                 controllers.WebScala.newFile
-GET		/file/:id					controllers.WebScala.showFile(id: Long)
+GET     /newFile/*titles				controllers.WebScala.newFile(titles: String)
+POST    /newFile/*titles			    controllers.WebScala.newFile(titles: String)
+GET     /newFile                        controllers.WebScala.newFileHome()
+POST    /newFile                        controllers.WebScala.newFileHome()
+GET     /newFile/                       controllers.WebScala.newFileHome()
+POST    /newFile/                       controllers.WebScala.newFileHome()
+GET     /fileManager/*titles			controllers.WebScala.fileManager(titles: String)
+GET     /fileManager					controllers.WebScala.fileManagerHome()
+GET     /fileManager					controllers.WebScala.fileManagerHome()

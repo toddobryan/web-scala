@@ -1,4 +1,4 @@
-@(file: models.files.File)(implicit req: models.auth.VisitRequest[_])
+@(file: models.files.File, path: String)(implicit req: models.auth.VisitRequest[_])
 
 @scripts = {
 	<script src="@routes.Assets.at("ace/ace.js")" type="text/javascript" charset="utf-8"></script>
@@ -11,6 +11,7 @@
 
 @main("File Editor - " + file.title, scripts) {
 	<h2>@file.title</h2>
+	@file.topOfFile(path, file.owner)
 	<form id="file" action=@{"./compile/" + file.id}> 
 		<div id="editor">
 		</div>
@@ -24,5 +25,5 @@
 		<div id="interactions">
 		</div>
 	</form>
-	<div id="info" class="hidden" fileId=@file.id fileContent="@file.content"></div>
+	<div id="info" class="hidden" path="@path" fileContent="@file.content"></div>
 }

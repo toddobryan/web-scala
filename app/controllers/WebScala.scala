@@ -36,18 +36,25 @@ object WebScala extends Controller {
     }
   }
   
-  def compile(id: Long) = VisitAction { implicit req =>
+  def compile(titles: String) = VisitAction { implicit req =>
     println("Compiling content of files")
     val content = req.body.asFormUrlEncoded.getOrElse(Map()).getOrElse("line", Nil) match {
       case Nil => ""
       case fst :: rst => fst
     }
-    File.getById(id) match {
+    req.visit.user match {
       case None => false
-      case Some(f) => {
-        f.content_=(content)
-        f.lastModified_=(DateTime.now)
-        DataStore.pm.makePersistent(f)
+      case Some(user) => {
+        user.root.findItem(titles.split("/").toList) match {
+          case None => println("Error in saving file.")
+          case Some(_: Directory) => println("This is a directory. What happened?")
+          case Some(f: File) => {
+            f.content_=(content)
+            f.lastModified_=(DateTime.now)
+            DataStore.pm.makePersistent(f.owner)
+            println("No errors")
+          }
+        }
       }
     }
     val start = HtmlRepl.out.getBuffer.length
@@ -57,33 +64,53 @@ object WebScala extends Controller {
     }
   }
   
-  case class NewFileForm(val user: User) extends Form {
+  case class NewFileForm(val dir: Directory) extends Form {
     val fileName = new TextField("fileName")
-    def fields = List(fileName)
+    val dirOrFile = new ChoiceField("folder", List(("File", "file"),
+    										       ("Directory", "dir")))
+    def fields = List(fileName, dirOrFile)
     
     override def validate(vb: ValidBinding): ValidationError = {
-      File.getByOwner(user).filter(_.title == vb.valueOf(NewFileForm(user).fileName).trim) match {
+      dir.content.filter(_.title == vb.valueOf(NewFileForm(dir).fileName).trim) match {
         case Nil => ValidationError(Nil)
         case file :: _ => ValidationError(List("File with this name already exists."))
       }
     }
   }
   
-  def newFile = VisitAction { implicit req =>
+  def newFileHome(): Action[AnyContent] = newFile("")
+  
+  def newFile(titles: String): Action[AnyContent] = VisitAction { implicit req =>
+    val titlesList = if(titles == "") Nil else titles.split("/").toList
     req.visit.user match {
         case None => Redirect(routes.Application.index()).flashing(("error" -> "You must be logged in to create a file"))
         case Some(user) => {
-          if(req.method == "GET") {
-            Ok(views.html.webscala.newFile(Binding(NewFileForm(user))))
-          } else {	
-            Binding(NewFileForm(user), req) match {
-              case ib: InvalidBinding => Ok(views.html.webscala.newFile(ib))
-              case vb: ValidBinding => {
-                val name = vb.valueOf(NewFileForm(user).fileName).trim()
-                val file = new File(name, user, "/* Enter Code Here */", Some(DateTime.now))
-                DataStore.pm.makePersistent(file)
-                val id = File.getByOwner(user).filter(_.title == name).head.id
-                Redirect("/file/" + id).flashing(("success" -> "File Created"))
+          user.root.findItem(titlesList) match {
+            case None => Redirect(routes.WebScala.fileManagerHome).flashing(("error" -> "Directory not found"))
+            case Some(_: File) => Redirect(routes.WebScala.fileManagerHome).flashing(("error" -> "Cannot add to a file"))
+            case Some(dir: Directory) => {
+              if(req.method == "GET") {
+                Ok(views.html.webscala.newFile(Binding(NewFileForm(dir))))
+              } else {	
+                Binding(NewFileForm(dir), req) match {
+                  case ib: InvalidBinding => Ok(views.html.webscala.newFile(ib))
+                  case vb: ValidBinding => {
+                    val name = vb.valueOf(NewFileForm(dir).fileName).trim()
+                    val dirOrFile = vb.valueOf(NewFileForm(dir).dirOrFile)
+                    if(dirOrFile == "dir") {
+                      val newDir = new Directory(name, user, Nil, 2)
+                      dir.addDirectory(newDir)
+                    } else {
+                      val file = new File(name, user, "/* Enter Code Here */", Some(DateTime.now))
+                      dir.addFile(file)
+                    }
+                    if(titles == "") {
+                      Redirect("/fileManager").flashing(("success" -> "Item Created"))
+                    } else {
+                      Redirect("/fileManager/" + titles).flashing(("success" -> "Item Created"))
+                    }
+                  }
+                }
               }
             }
          }
@@ -91,11 +118,47 @@ object WebScala extends Controller {
     }
   }
   
-  def showFile(id: Long) = VisitAction { implicit req =>
+  def deleteFile(dirId: Long)(id: Long) = VisitAction { implicit req =>
+    req.visit.user match {
+      case None => Redirect(routes.Application.index()).flashing(("error" -> "You must be logged in to delete a file."))
+      case Some(user) => {
         val maybeFile = File.getById(id)
-    	maybeFile match {
-    	  case Some(f) => Ok(views.html.webscala.getFile(f))
-    	  case None => Ok(views.html.index("File not found"))
-    	}
+        maybeFile match {
+          case None => Redirect(routes.Application.index()).flashing(("error" -> "No such file exists"))
+          case Some(f) => {
+            DataStore.pm.deletePersistent(f)
+            Redirect(routes.WebScala.fileManagerHome()).flashing(("success" -> "File successfully deleted"))
+          }
+        }
+      }
+    }  
+  }
+  
+  def fileManagerHome() = VisitAction { implicit req =>
+    req.visit.user match {
+      case None => Redirect(routes.Application.index()).flashing(("error" -> "You must be logged in to access files"))
+      case Some(user) => Ok(views.html.webscala.displayFiles(user.root, ""))
     }
+  }
+  
+ def fileManager(titles: String) = VisitAction { implicit req =>
+    req.visit.user match {
+      case None => Redirect(routes.Application.index()).flashing(("error" -> "You must be logged in to access files"))
+      case Some(user) => {
+        val directory = user.root
+        val titlesList = titles.split("/").toList
+        findFile(directory, titlesList)
+      }
+    }
+  }
+
+  def findFile(dir: Directory, title: List[String])(implicit req: VisitRequest[AnyContent]) = {
+    val path = title.mkString("/")
+    val urlPath = path + "/"
+    dir.findItem(title) match {
+      case None => Redirect(routes.Application.index()).flashing(("error" -> "No Such File"))
+      case Some(f: File) => Ok(views.html.webscala.getFile(f, path))
+      case Some(d: Directory) => Ok(views.html.webscala.displayFiles(d, path))
+    }
+  }
 }

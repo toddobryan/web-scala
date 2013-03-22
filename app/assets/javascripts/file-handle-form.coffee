@@ -1,8 +1,9 @@
 compileWithAjax = (editor) -> 
     code = editor.getValue()
-    fileId = $('#info').attr('fileId')
-    $.post('/compile/' + fileId, $.param({line : code}), (result) -> 
+    filePath = $('#info').attr('path')
+    $.post('/compile/' + filePath, $.param({line : code}), (result) -> 
     	$('#prev-content').html("")
+    	$('#compiler-message').html("")
     	$('#compiler-message').append(result)
     	)
 	### interactions.setValue("") ###

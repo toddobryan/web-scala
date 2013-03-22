@@ -7,7 +7,36 @@ import org.joda.time.DateTime
 import scalajdo._
 import models.auth._
 
-abstract class Item
+abstract class Item {
+  def title: String
+  def owner: User
+  def asHtmlFO: scala.xml.Elem
+  def asHtmlFO(path: String): scala.xml.Elem
+  
+  def pathLinks(path: String): List[String] = {
+    val splitPath = path.split("/").toList
+    if(splitPath.head != "") {
+      (for(i <- 1 to splitPath.length) yield (splitPath.take(i).mkString("/"))).toList
+    }
+    else Nil
+  }
+
+  def topOfFile(path: String, user: User): scala.xml.Elem = 
+    <ul class="breadcrumb">
+	  <li><a href="/fileManager">Home</a> <span class="divider">/</span></li>
+      {for(l <- pathLinks(path)) yield Item.breadcrumbLink(l, user)}
+    </ul>
+}
+
+object Item {
+  def breadcrumbLink(link: String, user: User): scala.xml.Elem =
+    <li>
+    <a href={"/fileManager/" + link}>
+    {link.split("/").toList.last} 
+    </a>
+    <span class="divider">/</span>
+    </li>
+}
 
 @PersistenceCapable(detachable="true")
 class File extends Item {
@@ -79,9 +108,29 @@ class File extends Item {
   // F.0. -> File Organizer
   def asHtmlFO: scala.xml.Elem = {
     <li class="file-fo">
-      <div class="file-title">{title}</div>
-      <div class="file-modified">{lastModified}</div>
-      <div class="file-delete">Delete</div>
+	  <a href={"/file/" + id}>
+		<div class="file-title span6">{title}</div>
+		<div class="file-modified span2">{timeString}</div>
+      </a>
+      <form class="in-line">
+		<button method="post" action={"/deleteFile/" + id}>
+			Delete?
+		</button>
+	  </form>
+    </li>
+  }
+  
+  def asHtmlFO(pathToDir: String): scala.xml.Elem = {
+    <li class="file-fo">
+	  <a href={"/fileManager/" + pathToDir + {if(pathToDir == "") "" else "/"} + title}>
+		<div class="file-title span6">{title}</div>
+		<div class="file-modified span2">{timeString}</div>
+      </a>
+      <form class="in-line">
+		<button method="post" action={"/deleteFile/" + id}>
+			Delete?
+		</button>
+	  </form>
     </li>
   }
 }
