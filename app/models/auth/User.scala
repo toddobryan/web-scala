@@ -11,6 +11,8 @@ import org.mindrot.jbcrypt.BCrypt
 import scalajdo.DataStore
 
 @PersistenceCapable(detachable="true")
+@Inheritance(strategy=InheritanceStrategy.NEW_TABLE)
+@Discriminator(strategy=DiscriminatorStrategy.CLASS_NAME)
 class User {
   @PrimaryKey
   @Persistent(valueStrategy=IdGeneratorStrategy.INCREMENT)
@@ -52,7 +54,8 @@ class User {
   @Persistent(defaultFetchGroup="true")
   private[this] var _lastLogin: java.sql.Timestamp = _
   def lastLogin: Option[DateTime] = if (_lastLogin == null) None else Some(new DateTime(_lastLogin.getTime))
-  def lastLogin_=(theLastLogin: DateTime) { _lastLogin = new java.sql.Timestamp(theLastLogin.getMillis) }
+  def lastLogin_=(theLastLogin: DateTime) { if(theLastLogin == null) _lastLogin = null 
+    										else _lastLogin = new java.sql.Timestamp(theLastLogin.getMillis) }
   
   //TODO: check email validity
   private[this] var _email: String = _
@@ -108,8 +111,10 @@ class User {
 
 object User {
   def getByUsername(username: String): Option[User] = {
-    val cand = QUser.candidate
-    DataStore.pm.query[User].filter(cand.username.eq(username)).executeOption()
+    Teacher.getByUsername(username) match {
+      case None => Student.getByUsername(username)
+      case Some(t: Teacher) => Some(t) 
+    }
   }
   
   def authenticate(username: String, password: String): Option[User] = {

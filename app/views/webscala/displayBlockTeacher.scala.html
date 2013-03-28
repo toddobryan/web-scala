@@ -1,0 +1,7 @@
+@(block: models.auth.Block)(implicit req: models.auth.VisitRequest[_])
+
+@main(block.name + " Page") {
+	<div class="hero-unit">
+	<p>Use this id to join this class: @block.id </p>
+	</div>
+}

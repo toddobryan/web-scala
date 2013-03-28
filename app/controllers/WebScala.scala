@@ -118,6 +118,7 @@ object WebScala extends Controller {
     }
   }
   
+  // this doesn't work lol, haven't updated it.
   def deleteFile(dirId: Long)(id: Long) = VisitAction { implicit req =>
     req.visit.user match {
       case None => Redirect(routes.Application.index()).flashing(("error" -> "You must be logged in to delete a file."))
@@ -161,4 +162,135 @@ object WebScala extends Controller {
       case Some(d: Directory) => Ok(views.html.webscala.displayFiles(d, path))
     }
   }
+  
+  object NewBlockForm extends Form {
+    def blockName = new TextField("blockName")
+    
+    def fields = List(blockName)
+    
+    override def validate(vb: ValidBinding): ValidationError = {
+      def blockName = vb.valueOf(NewBlockForm.blockName).trim
+      Block.getByName(blockName) match {
+        case None => ValidationError(Nil)
+        case Some(_) => ValidationError(List("A block with this name already exists."))
+      }
+    }
+  }
+  
+  def newBlock() = VisitAction {implicit req =>
+    req.visit.user match {
+      case Some(t: Teacher) => {
+        if(req.method == "GET") {
+          Ok(views.html.webscala.newBlock(Binding(NewBlockForm)))
+        } else {
+          Binding(NewBlockForm, req) match {
+            case ib: InvalidBinding => Ok(views.html.webscala.newBlock(ib))
+            case vb: ValidBinding => {
+              val blockName = vb.valueOf(NewBlockForm.blockName).trim
+              val newBlock = new Block(blockName, t)
+              DataStore.pm.makePersistent(newBlock)
+              Redirect(routes.Application.index()).flashing(("success" -> "New Class Created"))
+            }
+          }
+        }
+      }
+      case _ => {
+        Redirect(routes.Application.index()).flashing(("error") -> "You must be logged in as a teacher to create a block.")
+      }
+    }
+  }
+  
+  def myBlocks() = VisitAction {implicit req =>
+    req.visit.user match {
+      case Some(t: Teacher) => {
+        Ok(views.html.webscala.displayBlocksTeacher(Block.getByTeacher(t)))
+      }
+      case Some(s: Student) => {
+        Ok(views.html.webscala.displayBlocksStudent(Block.getByStudent(s)))
+      }
+      case None => {
+        Redirect(routes.Application.index()).flashing(("error") -> "You must be logged in to see your classes.")
+      }
+    }
+  }
+  
+  def findMyBlock(name: String) = VisitAction {implicit req =>
+    req.visit.user match {
+      case Some(t: Teacher) => {
+        val block = Block.getByTeacher(t).find(_.name == name)
+        block match {
+          case Some(b) => Ok(views.html.webscala.displayBlockTeacher(b))
+          case None => Redirect(routes.WebScala.myBlocks).flashing(("error") -> "This class does not exist")
+        }
+      }
+      case Some(s: Student) => {
+        val block = Block.getByStudent(s).find(_.name == name)
+        block match {
+          case Some(b) => Ok(views.html.webscala.displayBlockStudent(b))
+          case None => Redirect(routes.WebScala.myBlocks).flashing(("error") -> "This class does not exist")
+        }
+      }
+      case None => Redirect(routes.Application.index()).flashing(("error") -> "You must be logged in to see your classes.")
+    }
+  }
+  
+  object JoinBlockForm extends Form {
+    def blockName = new TextField("blockName")
+    def joinCode =  new TextField("joinCode")
+    
+    def fields = List(blockName, joinCode)
+    
+    override def validate(vb: ValidBinding): ValidationError = {
+      Block.getByName(vb.valueOf(JoinBlockForm.blockName)) match {
+        case Some(b: Block) => {
+          if(b.id.toString == vb.valueOf(joinCode)) {
+            new ValidationError(Nil)
+          } else {
+            new ValidationError(List("Class and Join Code did not match."))
+          }
+        }
+        case None => {
+          new ValidationError(List("Class could not be found."))
+        }
+      }
+    }
+  }
+  
+  def joinBlock() = VisitAction {implicit req =>
+    req.visit.user match {
+      case Some(s: Student) => {
+        if(req.method == "GET") {
+          Ok(views.html.webscala.joinBlock(Binding(JoinBlockForm)))
+        } else {
+          Binding(JoinBlockForm, req) match {
+            case ib: InvalidBinding => Ok(views.html.webscala.joinBlock(ib))
+            case vb: ValidBinding => {
+              Block.getByName(vb.valueOf(JoinBlockForm.blockName)) match {
+                case Some(b: Block) => {
+                  if(b.students.contains(s)) {
+                    Redirect(routes.WebScala.joinBlock()).flashing(("error") -> "You are already a member of this class.")
+                  } else {
+                    b.addStudent(s)
+                    DataStore.pm.makePersistent(b)
+                    Redirect(routes.WebScala.myBlocks).flashing(("success") -> "You have been added to this class!")
+                  }
+                }
+                case None => {
+                  Redirect(routes.Application.index()).flashing(("error") -> "The class was not found by some strange course of events.")
+                }
+              }     
+            }
+          }
+        }
+      }
+      case Some(_) => {
+        Redirect(routes.Application.index()).flashing(("error") -> "You must be logged in as a student to join a class.")
+      }
+      case None => {
+        Redirect(routes.Application.index()).flashing(("error") -> "You must be logged in to join a class.")
+      }
+    }
+  }
+  
+  
 }

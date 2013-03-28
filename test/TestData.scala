@@ -3,8 +3,8 @@ import models.files._
 import scalajdo._
 
 object TestData {
-  val user1: User = new User("jmiller14", "Jim", "Miller", email="jmiller@nada.com", password="temp123")
-  val user2: User = new User("amaniraj14", "Aaditya", "Manirajan", password="temp123")
+  val user1: User = new Teacher("jmiller14", "Jim", "Miller", email="jmiller@nada.com", password="temp123")
+  val user2: User = new Student("amaniraj14", "Aaditya", "Manirajan", password="temp123")
   val user3: User = new User("cjin14", "Choong Won", "Jin")
   val users = List(user1, user2, user3)
 

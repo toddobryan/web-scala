@@ -1,0 +1,6 @@
+@()(implicit req: models.auth.VisitRequest[_])
+
+@{req.visit.user match {
+    case Some(_: models.auth.Teacher) => <li><a href="#">Make a Class</a></li>
+    case _ => <div></div>
+}}
