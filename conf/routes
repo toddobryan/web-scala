@@ -41,3 +41,4 @@ POST    /joinClass										controllers.WebScala.joinBlock
 GET     /myClasses/:block/newAssignment					controllers.WebScala.newAssignment(block: String)
 POST    /myClasses/:block/newAssignment					controllers.WebScala.newAssignment(block: String)
 POST    /starterCode/:block/:assignment                 controllers.WebScala.startAssignment(block: String, assignment: String)
+

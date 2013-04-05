@@ -51,7 +51,7 @@ class Block {
   def addStudent(s: Student) = students_=(s :: students)
   
   def addAssignemnt(a: Assignment) = assignments_=(a :: assignments)
-  
+
   def asHtmlTeacher: scala.xml.Elem = {
     <tr><td><a href={"/myClasses/"+name}>{name}</a></td></tr>
   }

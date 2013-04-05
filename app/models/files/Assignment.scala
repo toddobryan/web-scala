@@ -16,7 +16,7 @@ class Assignment {
     starterCode_=(starterCode)
     testCode_=(testCode)
   }
-  
+
   @PrimaryKey
   @Persistent(valueStrategy=IdGeneratorStrategy.INCREMENT)
   private[this] var _id: Long = _
