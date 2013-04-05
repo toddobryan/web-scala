@@ -28,3 +28,16 @@ POST    /newFile/                       controllers.WebScala.newFileHome()
 GET     /fileManager/*titles			controllers.WebScala.fileManager(titles: String)
 GET     /fileManager					controllers.WebScala.fileManagerHome()
 GET     /fileManager					controllers.WebScala.fileManagerHome()
+
+# Blocks
+GET     /newClass             	      					controllers.WebScala.newBlock
+POST    /newClass                	 					controllers.WebScala.newBlock
+GET     /myClasses					 					controllers.WebScala.myBlocks
+GET     /myClasses/:name     	       					controllers.WebScala.findMyBlock(name: String)
+GET     /myClasses/:block/editAssignment/:assignment 	controllers.WebScala.editAssignment(block: String, assignment: String)
+POST    /myClasses/:block/editAssignment/:assignment 	controllers.WebScala.editAssignment(block: String, assignment: String)
+GET     /joinClass										controllers.WebScala.joinBlock
+POST    /joinClass										controllers.WebScala.joinBlock
+GET     /myClasses/:block/newAssignment					controllers.WebScala.newAssignment(block: String)
+POST    /myClasses/:block/newAssignment					controllers.WebScala.newAssignment(block: String)
+POST    /starterCode/:block/:assignment                 controllers.WebScala.startAssignment(block: String, assignment: String)

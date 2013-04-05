@@ -1,0 +1,7 @@
+@(block: models.auth.Block, assignments: List[models.files.Assignment])
+
+<table class="table">
+@for(a <- assignments) {
+  <tr><td><a href="@{"/myClasses/" + block.name + "/" + a.title}">@a.title</a></td></tr>
+}
+</table>

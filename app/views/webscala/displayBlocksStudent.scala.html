@@ -1,0 +1,10 @@
+@(blocks: List[models.auth.Block])(implicit req: models.auth.VisitRequest[_])
+
+@main("My Classes") {
+  <table class="table">
+  <tr><th>Class Name</th><th>Teacher</th></tr>
+   @for(b <- blocks) {
+     @b.asHtmlStudent
+   }
+  </table>
+}

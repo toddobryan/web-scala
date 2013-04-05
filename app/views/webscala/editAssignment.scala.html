@@ -1,0 +1,23 @@
+@(block: models.auth.Block, assignment: models.files.Assignment)(implicit req: models.auth.VisitRequest[_])
+
+@scripts = {
+	<script src="@routes.Assets.at("ace/ace.js")" type="text/javascript" charset="utf-8"></script>
+	<script src="@routes.Assets.at("javascripts/assignment-handle-form.js")" type="text/javascript" charset="utf-8"></script>
+	<link media="screen" href="/assets/stylesheets/assignment.css" type="text/css" rel="stylesheet"/>
+}
+
+@main("Assignment Editor - " + assignment.title, scripts) {
+	<h2>@assignment.title</h2>
+	<h3>Starter Code for Students</h3>
+	<form id="start-code"> 
+		<div id="starter">
+		</div>
+	</form>
+	<h3>Testing Code</h3>
+	<form id="test-code">
+		<div id="test">
+		</div>
+	</form>
+	<button id="saveButton" type="button">Save Changes</button>
+	<div id="info" class="hidden" block="@block.name" title="@assignment.title" start="@assignment.starterCode" test="@assignment.testCode"></div>
+}

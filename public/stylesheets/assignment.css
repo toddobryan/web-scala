@@ -1,0 +1,17 @@
+div#starter { 
+    position: relative;
+    width: 600px;
+    height: 200px;
+    background: #FFFFFF;
+    border-style: solid;
+    border-width: 2px;
+}
+
+div#test { 
+    position: relative;
+    width: 600px;
+    height: 200px;
+    background: #FFFFFF;
+    border-style: solid;
+    border-width: 2px;
+}

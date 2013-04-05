@@ -1,0 +1,10 @@
+@(block: models.auth.Block)(implicit req: models.auth.VisitRequest[_])
+
+@main(block.name + " Page") {
+	<div class="hero-unit">
+	<h2>@block.name</h2>
+	<p>Give your students this id to join the class: @block.id </p>
+	</div>
+	<h2>Assignments</h2>
+	@assignmentsList(block, block.assignments)
+}
