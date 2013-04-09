@@ -37,6 +37,7 @@ object WebScala extends Controller {
   }
   
   def compile(titles: String) = VisitAction { implicit req =>
+    HtmlRepl.repl.reset()
     println("Compiling content of files")
     val content = req.body.asFormUrlEncoded.getOrElse(Map()).getOrElse("line", Nil) match {
       case Nil => ""
@@ -66,8 +67,7 @@ object WebScala extends Controller {
   
   case class NewFileForm(val dir: Directory) extends Form {
     val fileName = new TextField("fileName")
-    val dirOrFile = new ChoiceField("folder", List(("File", "file"),
-    										       ("Directory", "dir")))
+    val dirOrFile = new ChoiceField("folder", List(("File", "file"), ("Directory", "dir")))
     def fields = List(fileName, dirOrFile)
     
     override def validate(vb: ValidBinding): ValidationError = {
@@ -189,7 +189,7 @@ object WebScala extends Controller {
               val blockName = vb.valueOf(NewBlockForm.blockName).trim
               val newBlock = new Block(blockName, t)
               DataStore.pm.makePersistent(newBlock)
-              Redirect(routes.Application.index()).flashing(("success" -> "New Class Created"))
+              Redirect(routes.WebScala.myBlocks()).flashing(("success" -> "New Class Created"))
             }
           }
         }
@@ -321,7 +321,14 @@ object WebScala extends Controller {
                 case ib: InvalidBinding => Ok(views.html.webscala.newAssignment(ib))
                 case vb: ValidBinding => {
                   val assignName = vb.valueOf(NewAssignmentForm(b).assignmentName).trim
-                  val assignment = new Assignment(assignName, "", "")
+                  val initialTestCode =
+"""// You can test student code by testing functionality.
+// Then create a value called myTests, which is a list of
+// (String, Boolean, String) triples, where the first
+// string is the title for a test, the boolean is the result
+// of the test (true=success, false=failure), and the
+// last string is a diagnostic for the student."""
+                  val assignment = new Assignment(assignName, "", initialTestCode)
                   b.addAssignemnt(assignment)
                   DataStore.pm.makePersistent(b)
                   Redirect(routes.WebScala.editAssignment(b.name, assignName))
@@ -361,7 +368,7 @@ object WebScala extends Controller {
                     a.starterCode_=(startCode)
                     a.testCode_=(testCode)
                     DataStore.pm.makePersistent(b)
-                    Redirect(routes.WebScala.editAssignment(b.name, a.title)).flashing(("success") -> "Assignment updated")
+                    Redirect(routes.WebScala.findMyBlock(b.name))
                   }
                 }
               }
@@ -401,5 +408,34 @@ object WebScala extends Controller {
       case _ => Redirect(routes.Application.index()).flashing(("error") -> "You are not logged in.")
     }
     
+  }
+  
+  def submitFile(block: String, assignment: String) = VisitAction { implicit req => 
+    req.visit.user match {
+      case Some(u: User) => {
+        def maybeBlock = Block.getByName(block)
+        maybeBlock match {
+          case Some(b) => {
+            val maybeAssign = b.assignments.find(_.title == assignment)
+            maybeAssign match {
+              case Some(a) => {
+                val matchingFile = u.root.findItem(List(block, assignment))
+                matchingFile match {
+                  case Some(f: File) => {
+                    Ok(views.html.webscala.showTestResults(a, f))
+                  }
+                  case _ => {
+                    Redirect(routes.Application.index()).flashing(("error") -> "The matching file could not be found.")
+                  }
+                }
+              }
+              case None => Redirect(routes.Application.index()).flashing(("error") -> "The assignment could not be found.")
+            }
+          }
+          case None => Redirect(routes.Application.index()).flashing(("error") -> "The specified block could not be found.")
+        }
+      }
+      case None => Redirect(routes.Application.index()).flashing(("error") -> "You must be logged into submit tests.")
+    }
   }
 }

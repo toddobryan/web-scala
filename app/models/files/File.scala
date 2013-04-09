@@ -6,6 +6,8 @@ import org.datanucleus.query.typesafe._
 import org.joda.time.DateTime
 import scalajdo._
 import models.auth._
+import scala.tools.nsc.interpreter.{ Results => IntpResults }
+import webscala.HtmlRepl
 
 abstract class Item {
   def title: String
@@ -132,6 +134,71 @@ class File extends Item {
 		</button>
 	  </form>
     </li>
+  }
+  
+  def isAssignment(currPath: String): Boolean = {
+    val pathList = currPath.split("/").toList
+    if(pathList.length > 2) false
+    else {
+      val maybeBlock = 
+        owner match {
+          case t: Teacher => Block.getByTeacher(t).find(_.name == pathList.head)
+          case s: Student => Block.getByStudent(s).find(_.name == pathList.head) 
+      }
+      maybeBlock.getOrElse(new Block("", new Teacher(""), Nil, Nil)).assignments.exists(_.title == title)
+    }
+  }
+  
+  def runTests(assignment: Assignment): scala.xml.Elem  = {
+    HtmlRepl.repl.reset()
+    println(content)
+    val start = HtmlRepl.out.getBuffer().length()
+    HtmlRepl.repl.interpret(content) match {
+      case IntpResults.Success => {
+        println(assignment.testCode)
+        val next = HtmlRepl.out.getBuffer.length
+        HtmlRepl.repl.interpret(assignment.testCode) match {
+          case IntpResults.Success => {
+            val last = HtmlRepl.out.getBuffer.length()
+            HtmlRepl.repl.interpret(HtmlRepl.webscalaTester) match {
+              case IntpResults.Success => {
+                val theTests = HtmlRepl.repl.valueOfTerm(HtmlRepl.repl.mostRecentVar)
+                if(HtmlRepl.isCorrectType(theTests)) {
+                  renderTestResults(HtmlRepl.unwrapTests(theTests))
+                } else {
+                  renderTestResults(List(("This error shouldn't happen.", false)))
+                }
+              }
+              case _ => {
+                renderTestResults(List(("The following error was encountered while preparing the test results:" +
+                						HtmlRepl.out.getBuffer.substring(last) +
+                						"The class's teacher may not have set up the tests correctly.", false)))
+              }
+            }
+          }
+          case _ => {
+            renderTestResults(List(("The following error was encountered while compiling the tests for the assignment:" +
+            						HtmlRepl.out.getBuffer.substring(next) +
+            						"This could be an error from your teacher's tests, or you may have not defined a required function.", false)))
+          }
+        }
+      }
+      case _ => {
+        renderTestResults(List(("The following error was encountered while compiling your file:" +
+    		  							 HtmlRepl.out.getBuffer.substring(start), false)))
+      }
+    }
+  }
+  
+  def renderTestResults(results: List[(String, Boolean)]): scala.xml.Elem = {
+    results match {
+      case Nil => <div class="alert alert-info">No tests were run</div>
+      case results => {
+        <div id="result">
+    	  {for(result <- results) yield <div class={"alert " + {if(result._2) "alert-success" else "alert-error"}}>{result._1}</div>}
+    	</div>
+      }
+    }
   }
 }
   

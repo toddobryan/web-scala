@@ -16,6 +16,13 @@
 		<div id="editor">
 		</div>
 	</form>
+	@if(file.isAssignment(path)) {
+	  <button id="runTests" type="button">Run Tests</button>
+	} else {
+	  <div class="hidden">
+	  <button id="runTests" type="button">Run Tests</button>
+	  </div>
+	}
 	<button id="compileButton" type="button">Compile and Save</button>
     <div id="compiler-message">
 	</div>

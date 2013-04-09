@@ -20,6 +20,12 @@ postToAjax = (editor) ->
     editor.setValue("")
     $('body').load(prettyPrint())
     
+runTests = (editor) ->
+	code = editor.getValue()
+	filePath = $('#info').attr('path')
+	$.post('/compile/' + filePath, $.param({line: code}), (result) -> )
+	window.open('/submitFile/' + filePath)
+    
 $('document').ready(() ->
     ###
     Setting up the file editor.
@@ -37,6 +43,7 @@ $('document').ready(() ->
         exec: (editor) -> compileWithAjax(editor)
     })
     $('#compileButton').click(() -> compileWithAjax(editor))
+    $('#runTests').click(() -> runTests(editor))
     ###
     Setting up the interactions area.
     ###

@@ -2,6 +2,7 @@
 
 <table class="table">
 @for(a <- assignments) {
-  <tr><td><a href="@{"/myClasses/" + block.name + "/" + a.title}">@a.title</a></td></tr>
+  <tr><td><a href="@{"/myClasses/" + block.name + "/editAssignment/" + a.title}">@a.title</a></td></tr>
 }
+  <tr><td><a href="@{"/myClasses/" + block.name + "/newAssignment"}"><em>Add an assignment</em></a></td></tr>
 </table>

@@ -28,6 +28,7 @@ POST    /newFile/                       controllers.WebScala.newFileHome()
 GET     /fileManager/*titles			controllers.WebScala.fileManager(titles: String)
 GET     /fileManager					controllers.WebScala.fileManagerHome()
 GET     /fileManager					controllers.WebScala.fileManagerHome()
+GET     /submitFile/:block/:assignment  controllers.WebScala.submitFile(block: String, assignment: String)
 
 # Blocks
 GET     /newClass             	      					controllers.WebScala.newBlock
