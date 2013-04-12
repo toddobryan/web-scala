@@ -14,6 +14,7 @@ abstract class Item {
   def owner: User
   def asHtmlFO: scala.xml.Elem
   def asHtmlFO(path: String): scala.xml.Elem
+  def asBlockFO(blockString: String, studentString: String, pathToDir: String): scala.xml.Elem
   
   def pathLinks(path: String): List[String] = {
     val splitPath = path.split("/").toList
@@ -136,6 +137,15 @@ class File extends Item {
     </li>
   }
   
+  def asBlockFO(blockString: String, studentString: String, pathToDir: String): scala.xml.Elem = {
+     <li class={"file-fo"}>
+       <a href={"/myClasses/" + blockString + "/" + studentString + "/" + {if(pathToDir == "") "" else "/"} + title}>
+         <div class="file-title span6">{title}</div>
+		 <div class="file-modified span2">{timeString}</div>
+       </a>
+     </li>
+   }
+  
   def isAssignment(currPath: String): Boolean = {
     val pathList = currPath.split("/").toList
     if(pathList.length > 2) false
@@ -143,7 +153,11 @@ class File extends Item {
       val maybeBlock = 
         owner match {
           case t: Teacher => Block.getByTeacher(t).find(_.name == pathList.head)
-          case s: Student => Block.getByStudent(s).find(_.name == pathList.head) 
+          case s: Student => {
+            println(Block.getByStudent(s))
+            println(Block.getAll)
+            Block.getByStudent(s).find(_.name == pathList.head)
+          }
       }
       maybeBlock.getOrElse(new Block("", new Teacher(""), Nil, Nil)).assignments.exists(_.title == title)
     }

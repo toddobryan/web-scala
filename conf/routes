@@ -34,7 +34,9 @@ GET     /submitFile/:block/:assignment  controllers.WebScala.submitFile(block: S
 GET     /newClass             	      					controllers.WebScala.newBlock
 POST    /newClass                	 					controllers.WebScala.newBlock
 GET     /myClasses					 					controllers.WebScala.myBlocks
-GET     /myClasses/:name     	       					controllers.WebScala.findMyBlock(name: String)
+GET     /myClasses/:block     	       					controllers.WebScala.findMyBlock(block: String)
+GET     /myClasses/:block/:student						controllers.WebScala.getStudentFiles(block: String, student: String, titles = "")
+GET     /myClasses/:block/:student/*titles				controllers.WebScala.getStudentFiles(block: String, student: String, titles: String)
 GET     /myClasses/:block/editAssignment/:assignment 	controllers.WebScala.editAssignment(block: String, assignment: String)
 POST    /myClasses/:block/editAssignment/:assignment 	controllers.WebScala.editAssignment(block: String, assignment: String)
 GET     /joinClass										controllers.WebScala.joinBlock
@@ -42,4 +44,3 @@ POST    /joinClass										controllers.WebScala.joinBlock
 GET     /myClasses/:block/newAssignment					controllers.WebScala.newAssignment(block: String)
 POST    /myClasses/:block/newAssignment					controllers.WebScala.newAssignment(block: String)
 POST    /starterCode/:block/:assignment                 controllers.WebScala.startAssignment(block: String, assignment: String)
-

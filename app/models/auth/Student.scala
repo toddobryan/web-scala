@@ -29,6 +29,8 @@ class Student extends User {
     permissions_=(mutable.Set[Permission]())
     root_=(new Directory("Home", this, Nil))
   }
+  
+  override def toString = username
 }
 
 object Student {

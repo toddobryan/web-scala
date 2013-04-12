@@ -155,11 +155,19 @@ object WebScala extends Controller {
 
   def findFile(dir: Directory, title: List[String])(implicit req: VisitRequest[AnyContent]) = {
     val path = title.mkString("/")
-    val urlPath = path + "/"
     dir.findItem(title) match {
       case None => Redirect(routes.Application.index()).flashing(("error" -> "No Such File"))
       case Some(f: File) => Ok(views.html.webscala.getFile(f, path))
       case Some(d: Directory) => Ok(views.html.webscala.displayFiles(d, path))
+    }
+  }
+  
+  def findStudentFile(bString: String, sString: String, dir: Directory, title: List[String])(implicit req: VisitRequest[AnyContent]) = {
+    val path = title.mkString("/")
+    dir.findItem(title) match {
+      case None => Redirect(routes.Application.index()).flashing(("error" -> "No Such File"))
+      case Some(f: File) => Ok(views.html.webscala.viewStudentFile(bString, sString, f, path))
+      case Some(d: Directory) => Ok(views.html.webscala.viewStudentFiles(bString, sString, d, path))
     }
   }
   
@@ -195,7 +203,7 @@ object WebScala extends Controller {
         }
       }
       case _ => {
-        Redirect(routes.Application.index()).flashing(("error") -> "You must be logged in as a teacher to create a block.")
+        Redirect(routes.Application.index()).flashing(("error" -> "You must be logged in as a teacher to create a block."))
       }
     }
   }
@@ -227,10 +235,10 @@ object WebScala extends Controller {
         val block = Block.getByStudent(s).find(_.name == name)
         block match {
           case Some(b) => Ok(views.html.webscala.displayBlockStudent(b))
-          case None => Redirect(routes.WebScala.myBlocks).flashing(("error") -> "This class does not exist")
+          case None => Redirect(routes.WebScala.myBlocks).flashing(("error" -> "This class does not exist"))
         }
       }
-      case None => Redirect(routes.Application.index()).flashing(("error") -> "You must be logged in to see your classes.")
+      case None => Redirect(routes.Application.index()).flashing(("error" -> "You must be logged in to see your classes."))
     }
   }
   
@@ -392,9 +400,17 @@ object WebScala extends Controller {
                 def maybeClassDir = u.root.content.find(_.title == block)
                 maybeClassDir match {
                   case Some(d: Directory) => {
-                    d.addFile(new File(a.title, u, starterCode))
-                    DataStore.pm.makePersistent(u)
-                    Redirect(routes.WebScala.fileManager(block + "/" + assignment))
+                    val alreadyAssigned = d.content.find(_.title == assignment)
+                    alreadyAssigned match {
+                      case None => {
+                        d.addFile(new File(a.title, u, starterCode))
+                        DataStore.pm.makePersistent(u)
+                        Redirect(routes.WebScala.fileManager(block + "/" + assignment))
+                      }
+                      case _ => {
+                        Redirect(routes.WebScala.fileManager(block + "/" + assignment))
+                      }
+                    }
                   }
                   case _ => Redirect(routes.Application.index()).flashing(("error") -> "A folder for this class was not found, so the assignment could not be added. Create a folder with this class's name in your home folder.")
                 }
@@ -438,4 +454,34 @@ object WebScala extends Controller {
       case None => Redirect(routes.Application.index()).flashing(("error") -> "You must be logged into submit tests.")
     }
   }
+  
+  def getStudentFiles(block: String, student: String, titles: String) = VisitAction {implicit req =>
+    req.visit.user match {
+      case Some(t: Teacher) => {
+        val blocks = Block.getByTeacher(t)
+        val maybeBlock = blocks.find(_.name == block)
+        maybeBlock match {
+          case Some(b: Block) => {
+            val maybeStudent = b.students.find(_.username == student)
+            maybeStudent match {
+              case Some(s: Student) => {
+                val userRoot = s.root.findItem(block)
+                userRoot match {
+                  case Some(dir: Directory) => {
+                    val path = titles.split("/").toList
+                    findStudentFile(block, student, dir, path)
+                  }
+                  case _ => Redirect(routes.Application.index()).flashing(("error") -> "User's class directory not found. It may have been deleted.")
+                }
+              }
+            }
+          }
+          case _ => Redirect(routes.Application.index()).flashing(("error") -> "Block with given name not found")
+        }
+      }
+      case _ => Redirect(routes.Application.index()).flashing(("error") -> "You must be logged as a teacher to view student files.")
+    }
+  }
+  
+  def getStudentFile(block: String, student: String, titles: String) = TODO
 }

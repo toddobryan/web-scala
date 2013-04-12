@@ -40,6 +40,8 @@ class Block {
     _students = mutableStudents.asJava
   }
   
+  private[this] var _allBlocks = true
+  
   def this(name: String, teacher: Teacher, assignments: List[Assignment] = Nil, students: List[Student] = Nil) = {
     this()
     name_=(name)
@@ -58,6 +60,8 @@ class Block {
   def asHtmlStudent: scala.xml.Elem = {
     <tr><td><a href={"/myClasses/"+name}>{name}</a></td><td>{teacher.displayName}</td></tr>
   }
+  
+  override def toString = "Block(" + name + ", " + students + ")"
 }
 
 object Block {
@@ -68,7 +72,13 @@ object Block {
   
   def getByStudent(s: Student): List[Block] = {
     val cand = QBlock.candidate
-    DataStore.pm.query[Block].filter(cand.students.contains(s)).executeList
+    val all = DataStore.pm.query[Block].filter(cand.allBlocks.eq(true)).executeList
+    all.filter(_.students.exists(_.id == s.id))
+  }
+  
+  def getAll: List[Block] = {
+    val cand = QBlock.candidate
+    DataStore.pm.query[Block].filter(cand.allBlocks.eq(true)).executeList
   }
   
   def getByName(name: String): Option[Block] = {
@@ -90,6 +100,9 @@ trait QBlock extends PersistableExpression[Block] {
   private[this] lazy val _students: CollectionExpression[java.util.Set[Student], Student] = 
     new CollectionExpressionImpl[java.util.Set[Student], Student](this, "_students")
   def students: CollectionExpression[java.util.Set[Student], Student] = _students
+  
+  private[this] lazy val _allBlocks: BooleanExpression = new BooleanExpressionImpl(this, "_allBlocks")
+  def allBlocks: BooleanExpression = _allBlocks
 }
 
 object QBlock {

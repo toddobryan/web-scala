@@ -62,6 +62,14 @@ class Directory extends Item {
       </a>
     </li>
   }
+   
+   def asBlockFO(blockString: String, studentString: String, pathToDir: String): scala.xml.Elem = {
+     <li class={"folder-fo " + rootClassString}>
+       <a href={"/myClasses/" + blockString + "/" + studentString + "/" + {if(pathToDir == "") "" else "/"} + title}>
+       <div class="folder-name">{title}</div>
+       </a>
+     </li>
+   }
   
   def addFile(f: File) = (content_=(f :: content))
   

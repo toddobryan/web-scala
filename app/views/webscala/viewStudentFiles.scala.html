@@ -1,0 +1,10 @@
+@(bString: String, sString: String, directory: models.files.Directory, currPath: String)(implicit req: models.auth.VisitRequest[_])
+
+@main(sString + "'s Directory for " + bString, Html("")) {
+  <h1>@directory.title</h1>
+  <ul class="unstyled">
+    @for(item <- directory.sortedContent) {
+      @item.asBlockFO(bString, sString, currPath)
+    }
+  </ul>
+}
