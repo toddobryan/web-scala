@@ -1,0 +1,7 @@
+@(block: models.auth.Block, students: List[models.auth.Student])
+
+<table class="table">
+@for(s <- students) {
+  <tr><td><a href="@s.accessClassFiles(block.name)">@s.nameForClass</a></td></tr>
+}
+</table>
