@@ -23,7 +23,7 @@ postToAjax = (editor) ->
 runTests = (editor) ->
 	code = editor.getValue()
 	filePath = $('#info').attr('path')
-	$.post('/compile/' + filePath, $.param({line: code}), (result) -> )
+	# $.post('/compile/' + filePath, $.param({line: code}), (result) -> )
 	window.open('/submitFile/' + filePath)
     
 $('document').ready(() ->

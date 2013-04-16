@@ -7,8 +7,8 @@ div#editor {
     border-width: 2px;
 }
 
-#compileButton {
-    margin-left: 467px;
+#runTests {
+    margin-left: 380px;
 }
 
 #file {

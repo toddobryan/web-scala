@@ -129,22 +129,22 @@ class File extends Item {
 		<div class="file-title span6">{title}</div>
 		<div class="file-modified span2">{timeString}</div>
       </a>
-      <form class="in-line">
-		<button method="post" action={"/deleteFile/" + id}>
-			Delete?
-		</button>
-	  </form>
     </li>
   }
   
   def asBlockFO(blockString: String, studentString: String, pathToDir: String): scala.xml.Elem = {
      <li class={"file-fo"}>
        <a href={"/myClasses/" + blockString + "/" + studentString + "/" + {if(pathToDir == "") "" else "/"} + title}>
-         <div class="file-title span6">{title}</div>
+         <div class="file-title span4">{title}</div>
 		 <div class="file-modified span2">{timeString}</div>
        </a>
+	   <div class="span3"><button href={teacherTestUrl(blockString, studentString, pathToDir)} class="btn test-btn">Test Code</button></div>
      </li>
    }
+  
+  def teacherTestUrl(blockString: String, studentString: String, pathToDir: String): String ={
+    "/myClasses/" + blockString + "/" + studentString + "/" + "testCode" + "/" + {if(pathToDir == "") "" else "/"} + title
+  }
   
   def isAssignment(currPath: String): Boolean = {
     val pathList = currPath.split("/").toList

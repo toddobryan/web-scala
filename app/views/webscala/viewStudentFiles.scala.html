@@ -1,6 +1,8 @@
 @(bString: String, sString: String, directory: models.files.Directory, currPath: String)(implicit req: models.auth.VisitRequest[_])
 
-@main(sString + "'s Directory for " + bString, Html("")) {
+@scripts = {<script src="@routes.Assets.at("javascripts/linkToTester.js")" type="text/javascript" charset="utf-8"></script>}
+
+@main(sString + "'s Directory for " + bString, scripts) {
   <h1>@directory.title</h1>
   <ul class="unstyled">
     @for(item <- directory.sortedContent) {

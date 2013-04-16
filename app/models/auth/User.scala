@@ -107,6 +107,8 @@ class User {
   }
   
   def fullName(): String = first.getOrElse("(no first name entered)") + " " + last.getOrElse("(no last name entered)")
+  def nameForClass: String = if(first != null && last != null) first + " " + last else username
+  def accessClassFiles(blockString: String): String = "/myClasses/" + blockString + "/" + username
 }
 
 object User {
