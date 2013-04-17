@@ -4,6 +4,7 @@
   case None => {
     <li>Not logged in.</li>
     <li><a href={ controllers.routes.Auth.login().toString }>Log in</a></li>
+    <li><a href={ controllers.routes.Auth.newUser().toString }>Create an Account</a></li>
   }
   case Some(user) => {
     <li>Logged in as: { user.fullName }</li>
