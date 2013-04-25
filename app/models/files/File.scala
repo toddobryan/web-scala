@@ -166,43 +166,35 @@ class File extends Item {
   def runTests(assignment: Assignment): scala.xml.Elem  = {
     HtmlRepl.repl.reset()
     println(content)
-    val start = HtmlRepl.out.getBuffer().length()
-    HtmlRepl.repl.interpret(content) match {
-      case IntpResults.Success => {
-        println(assignment.testCode)
-        val next = HtmlRepl.out.getBuffer.length
-        HtmlRepl.repl.interpret(assignment.testCode) match {
-          case IntpResults.Success => {
-            val last = HtmlRepl.out.getBuffer.length()
-            HtmlRepl.repl.interpret(HtmlRepl.webscalaTester) match {
-              case IntpResults.Success => {
-                val theTests = HtmlRepl.repl.valueOfTerm(HtmlRepl.repl.mostRecentVar)
-                if(HtmlRepl.isCorrectType(theTests)) {
-                  renderTestResults(HtmlRepl.unwrapTests(theTests))
-                } else {
-                  renderTestResults(List(("This error shouldn't happen.", false)))
-                }
-              }
-              case _ => {
-                renderTestResults(List(("The following error was encountered while preparing the test results:" +
-                						HtmlRepl.out.getBuffer.substring(last) +
-                						"The class's teacher may not have set up the tests correctly.", false)))
-              }
-            }
-          }
-          case _ => {
-            renderTestResults(List(("The following error was encountered while compiling the tests for the assignment:" +
-            						HtmlRepl.out.getBuffer.substring(next) +
-            						"This could be an error from your teacher's tests, or you may have not defined a required function.", false)))
-          }
+    val errorStart1 = HtmlRepl.out.getBuffer.length
+    val contentResult = HtmlRepl.repl.interpret(content)
+    val contentError = HtmlRepl.out.getBuffer.substring(errorStart1)
+    testMatcher(contentResult, "compiling your file", contentError) {
+      val errorStart2 = HtmlRepl.out.getBuffer.length
+      val assignmentResult = HtmlRepl.repl.interpret(assignment.testCode)
+      val assignmentError = HtmlRepl.out.getBuffer.substring(errorStart2)
+      testMatcher(assignmentResult, "compiling the assignment tests", assignmentError + " This could be an error on your teacher's part, or you may have failed to define a required function.") {
+        val errorStart3 = HtmlRepl.out.getBuffer.length
+        val testerResult = HtmlRepl.repl.interpret(HtmlRepl.webscalaTester)
+        val testerError = HtmlRepl.out.getBuffer.substring(errorStart3)
+        testMatcher(testerResult, "preparing the test results", testerError + "The class's teacher may not have set up the tests correctly.") {
+          val theTests = HtmlRepl.repl.valueOfTerm(HtmlRepl.repl.mostRecentVar)
+          if(HtmlRepl.isCorrectType(theTests)) renderTestResults(HtmlRepl.unwrapTests(theTests))
+          else renderTestResults(List(("Report this error to miller.james01@gmail.com", false)))
         }
-      }
-      case _ => {
-        renderTestResults(List(("The following error was encountered while compiling your file:" +
-    		  							 HtmlRepl.out.getBuffer.substring(start), false)))
       }
     }
   }
+  
+  def testMatcher(result: IntpResults.Result, occurrence: String, additionalDiagnostic: String = "")
+  				 (successAction: scala.xml.Elem): scala.xml.Elem = {
+    result match {
+      case IntpResults.Success => successAction
+      case IntpResults.Incomplete => renderTestResults(List(("No errors, but the code used while " + occurrence + " was incomplete. Check your syntax.", false)))
+      case _ => renderTestResults(List(("The following error occurred while " + occurrence + ": " +
+    		  						    additionalDiagnostic, false)))	
+    }
+  } 
   
   def renderTestResults(results: List[(String, Boolean)]): scala.xml.Elem = {
     results match {
@@ -229,22 +221,6 @@ object File {
 	
 	def mostRecentFour(owner: User): List[File] = {
 	  getByOwner(owner).sortWith(_ recentSort _).take(4)
-	}
-	
-	def fileSidebar(files: List[File]): scala.xml.Elem = {
-	  <div id="files">
-	  {for(file <- files) yield {
-	    <li>
-            <small>
-		    <a href={"/file/" + file.id}>
-		    {file.title}
-	    	<br />
-            <div class="muted">{file.timeString}</div>
-            </a>
-            </small>
-	    </li>
-	  }}
-	  </div>
 	}
 }
 

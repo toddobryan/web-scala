@@ -1,3 +1,3 @@
 $('document').ready(() ->
-	$('.test-btn').click(() -> window.open(this.attr('href')))
+	$('.test-btn').click(() -> window.open($('.test-btn').attr('href')))
 )
