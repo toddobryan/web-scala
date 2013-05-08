@@ -1,6 +1,7 @@
 package controllers
 
 import scala.tools.nsc.interpreter.{ Results => IntpResults }
+import scala.tools.nsc.interpreter.IR.{ Result => IntpResult}
 import play.api._
 import play.api.mvc._
 import webscala.HtmlRepl
@@ -13,12 +14,55 @@ import org.joda.time._
 import forms._
 import forms.fields._
 import forms.validators._
+import scala.concurrent._
+import scala.concurrent.duration._
+import ExecutionContext.Implicits.global
+import scala.language.postfixOps
+
+object SafeCode {
+  
+  def runCode(code: => IntpResult): (IntpResult, String) = {
+    val start = HtmlRepl.out.getBuffer.length
+    val res = future { code }
+    try {
+      val eventualResult = Await.result(res, 10000 millis)
+      eventualResult match {
+        case IntpResults.Success => (IntpResults.Success, "No errors!")
+        case IntpResults.Incomplete => (IntpResults.Incomplete, "Your code was not complete. Check near the end.")
+        case IntpResults.Error => (IntpResults.Error, "The following error occurred:\n" + HtmlRepl.out.getBuffer.substring(start))
+      }
+    } catch {
+      case to: java.util.concurrent.TimeoutException => (IntpResults.Error, "Timeout Exception. Check for infinite loops.")
+      case e: Exception => (IntpResults.Error, "Exception Thrown: " + e)
+    }
+  }
+  
+}
 
 object WebScala extends Controller {
   //lazy val repl = new HtmlRepl()
 
   def ide = Authenticated { implicit req =>
     Ok(views.html.webscala.ide())
+  }
+  
+  def fileIde(titles: String) = VisitAction { implicit req =>
+    req.visit.user match {
+      case Some(u: User) => {
+        val titleList = titles.split("/").toList
+        val matchingFile = u.root.findItem(titleList)
+        matchingFile match {
+          case Some(f: File) => {
+            val result = SafeCode.runCode { HtmlRepl.repl.interpret(f.content) }
+            Ok(views.html.webscala.ideSkeleton(f, result._2))
+          }
+          case _ => {
+            Redirect(routes.Application.index()).flashing(("error") -> "The file could not be found.")
+          }
+        }
+      }
+      case None => Redirect(routes.Application.index()).flashing(("error") -> "You must be logged into run a file.")
+    }
   }
 
   def interpret = VisitAction { implicit req =>
@@ -28,17 +72,16 @@ object WebScala extends Controller {
       case fst :: rst => fst
     }
     println(line)
-    val start = HtmlRepl.out.getBuffer.length
-    HtmlRepl.repl.interpret(line) match {
+    val result = SafeCode.runCode { HtmlRepl.repl.interpret(line) }
+    result._1 match {
       case IntpResults.Success => Ok("" + HtmlRepl.repl.valueOfTerm(HtmlRepl.repl.mostRecentVar).getOrElse(""))
-      case IntpResults.Error => Ok(HtmlRepl.out.getBuffer.substring(start))
-      case IntpResults.Incomplete => Ok("We don't do incomplete statements, yet.")
+      case IntpResults.Error => Ok(result._2)
+      case IntpResults.Incomplete => Ok(result._2)
     }
   }
   
   def compile(titles: String) = VisitAction { implicit req =>
     HtmlRepl.repl.reset()
-    println("Compiling content of files")
     val content = req.body.asFormUrlEncoded.getOrElse(Map()).getOrElse("line", Nil) match {
       case Nil => ""
       case fst :: rst => fst
@@ -53,16 +96,60 @@ object WebScala extends Controller {
             f.content_=(content)
             f.lastModified_=(DateTime.now)
             DataStore.pm.makePersistent(f.owner)
-            println("No errors")
+            println("No errors in compiling")
           }
         }
       }
     }
-    val start = HtmlRepl.out.getBuffer.length
-    HtmlRepl.repl.interpret(content) match {
-      case IntpResults.Success => Ok("No errors in compiling this file!")
-      case _ => Ok(HtmlRepl.out.getBuffer.substring(start))
+    val result = SafeCode.runCode { HtmlRepl.repl.interpret(content) }
+    Ok(result._2)
+  }
+  
+  def save(titles: String) = VisitAction { implicit req =>
+  	val content = req.body.asFormUrlEncoded.getOrElse(Map()).getOrElse("content", Nil) match {
+      case Nil => ""
+      case fst :: rst => fst
     }
+  	val testCode = req.body.asFormUrlEncoded.getOrElse(Map()).getOrElse("test", Nil) match {
+  	  case Nil => ""
+  	  case fst :: rst => fst
+  	}
+  	req.visit.user match {
+      case None => false
+      case Some(user) => {
+        user.root.findItem(titles.split("/").toList) match {
+          case None => println("Error in saving file test.")
+          case Some(_: Directory) => println("This is a directory. What happened?")
+          case Some(f: File) => {
+            f.content_=(content)
+            f.tests_=(testCode)
+            f.lastModified_=(DateTime.now)
+            DataStore.pm.makePersistent(f.owner)
+            println("No errors in saving")
+          }
+        }
+      }
+    }
+  	Ok("Content and Tests saved.")
+  }
+  
+  def test(titles: String) = VisitAction { implicit req =>
+    req.visit.user match {
+      case None => Redirect(routes.Application.index).flashing(("error" -> "You must be logged into"))
+      case Some(user) => {
+        user.root.findItem(titles.split("/").toList) match {
+          case None => Redirect(routes.Application.index).flashing(("error" -> "File not found."))
+          case Some(_: Directory) => Redirect(routes.Application.index).flashing(("error" -> "This is a directory"))
+          case Some(f: File) => {
+           // f.content_=(content)
+            f.lastModified_=(DateTime.now)
+            DataStore.pm.makePersistent(f.owner)
+            println("No errors in compiling")
+            Ok("Dog")
+          }
+        }
+      }
+    }  
   }
   
   case class NewFileForm(val dir: Directory) extends Form {
@@ -157,7 +244,7 @@ object WebScala extends Controller {
     val path = title.mkString("/")
     dir.findItem(title) match {
       case None => Redirect(routes.Application.index()).flashing(("error" -> "No Such File"))
-      case Some(f: File) => Ok(views.html.webscala.getFile(f, path))
+      case Some(f: File) => Ok(views.html.webscala.newGetFile(f, path))
       case Some(d: Directory) => Ok(views.html.webscala.displayFiles(d, path))
     }
   }

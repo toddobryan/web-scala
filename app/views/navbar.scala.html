@@ -1,0 +1,23 @@
+@()(implicit req: models.auth.VisitRequest[_])
+
+<div class="navbar">
+    <div class="navbar-inner">
+      <div class="container" style="width: auto;">
+        <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </a>
+        <a class="brand" href="/" style="margin-left: 0px;">Web Scala</a>
+        <div class="nav-collapse">
+          <ul class="nav">
+            <li><a href="/">Home</a></li>
+            <li><a href="/ide">Interpreter</a></li>
+            @fileInfo()
+            @teacherOrStudent()
+          </ul>
+          @loginInfo()
+        </div><!-- /.nav-collapse -->
+      </div>
+    </div><!-- /navbar-inner -->
+</div><!-- /navbar -->

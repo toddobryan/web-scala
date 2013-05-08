@@ -51,6 +51,8 @@ class File extends Item {
   private[this] var _owner: User = _
   @Column(length=1048576) // 1MB
   private[this] var _content: String = _
+  @Column(length=1048576) // 1MB
+  private[this] var _tests: String = _
   @Persistent(defaultFetchGroup= "true")
   private[this] var _lastModified: java.sql.Timestamp = _
   
@@ -59,6 +61,7 @@ class File extends Item {
     _title = title
     _owner = owner
     _content = content
+    _tests = defaultTestCode(title)
     lastModified match {
       case None => _lastModified = null
       case Some(date) => lastModified_=(date)
@@ -76,12 +79,37 @@ class File extends Item {
   def content: String = _content
   def content_=(theContent: String) = (_content = theContent)
   
+  def tests: String = _tests
+  def tests_=(theTests: String) = (_tests = theTests)
+  
   def lastModified: Option[DateTime] = if(_lastModified == null) None else Some(new DateTime(_lastModified.getTime))
   def lastModified_=(theDate: DateTime) = (_lastModified = new java.sql.Timestamp(theDate.getMillis()))
   
   override def toString = {
     "%s -- %s".format(title, owner)
   }
+  
+  def objectName(s: String): String = {
+    s.split(" ").map(capitalize(_)).mkString("")
+  }
+  
+  def capitalize(s: String) = {
+     s.replaceFirst(s.substring(0,1), s.substring(0,1).toUpperCase)
+  }
+  
+  def defaultTestCode(s: String): java.lang.String = {
+"""import org.scalatest.Suite
+import org.scalatest.matchers.ShouldMatchers
+
+// Do not change the name of this test object, please!
+class """ + objectName(s) + "Test" + """ extends Suite {
+  test("sample") {
+    val x = 2 + 2
+	x should be === (4)
+  }
+}
+"""
+}
   
   def recentSort(file: File): Boolean = {
     lastModified match {
@@ -236,6 +264,9 @@ trait QFile extends PersistableExpression[File] {
   
   private[this] lazy val _content: StringExpression = new StringExpressionImpl(this, "_content")
   def content: StringExpression = _content
+  
+  private[this] lazy val _tests: StringExpression = new StringExpressionImpl(this, "_tests")
+  def tests: StringExpression = _tests
 }
 
 object QFile {

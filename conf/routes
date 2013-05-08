@@ -16,9 +16,12 @@ POST	/createAccount				controllers.Auth.newUser
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
 
 GET     /ide                        controllers.WebScala.ide
+GET		/ide/*titles				controllers.WebScala.fileIde(titles: String)
 POST    /interpret                  controllers.WebScala.interpret
 GET     /compile/*titles            controllers.WebScala.compile(titles: String)
 POST    /compile/*titles            controllers.WebScala.compile(titles: String)
+POST    /save/*titles				controllers.WebScala.save(titles: String)
+GET		/test/*titles				controllers.WebScala.test(titles: String)
 
 # Files
 GET     /newFile/*titles				controllers.WebScala.newFile(titles: String)

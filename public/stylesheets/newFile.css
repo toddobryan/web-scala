@@ -7,39 +7,24 @@ h3 {
   padding-right: 50px;
 }
 
+.gray {
+    background: #A0A0A0;
+}
+
 div#editor { 
-    position: relative;
-    width: 600px;
-    height: 200px;
+    height: 72%;
+    width: 99%;
     background: #FFFFFF;
     border-style: solid;
     border-width: 2px;
 }
 
 div#test {
-   position: relative;
-   width: 600px;
-   height: 200px;
+   height: 72%;
+   width: 99%;
    background: #FFFFFF;
    border-style: solid;
    border-width: 2px;
-}
-
-#runTests {
-    margin-left: 380px;
-}
-
-#file {
-    margin-bottom: 10px;
-}
-
-#interactions { 
-    position: relative;
-    width: 600px;
-    height: 20px;
-    background: #FFFFFF;
-    border-style: solid;
-    border-width: 2px;
 }
 
 #test-form {
@@ -58,10 +43,6 @@ div#test {
 	padding-top:10px;
 	font-size:18px;
 	position:relative;
-}
-
-#prev-content div, #entry {
-	display: inline;
 }
 
 .hidden {

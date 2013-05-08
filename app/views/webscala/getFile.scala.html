@@ -10,9 +10,13 @@
 }
 
 @main("File Editor - " + file.title, scripts) {
-	<h2>@file.title</h2>
+	<div class="row">
 	@file.topOfFile(path, file.owner)
-	<form id="file" action=@{"./compile/" + file.id}> 
+	</div>
+	<h2>@file.title</h2>
+	<h3 id="title1">Content</h3>
+	<h3 id="title2">Tests</h3>
+	<form id="file"> 
 		<div id="editor">
 		</div>
 	</form>
@@ -23,14 +27,15 @@
 	  <button id="runTests" type="button">Run Tests</button>
 	  </div>
 	}
-	<button id="compileButton" type="button">Compile and Save</button>
-    <div id="compiler-message">
-	</div>
-	<div id="prev-content">
-	</div>
-	<form id="code" action="./interpet">
-		<div id="interactions">
+	<form id="test-form" action="./test">
+		<div id="test">
 		</div>
 	</form>
-	<div id="info" class="hidden" path="@path" fileContent="@file.content"></div>
+	<button id="compileButton" type="button">Compile and Save</button>
+	<button id="enterInteractions" type="button">Enter Interactions</button>
+	<button id="saveTestButton" type="button">Save Test Code</button>
+	<button id="toggleTestButton" type="button">Switch Editor</button>
+	<div id="compiler-message">
+	</div>
+	<div id="info" class="hidden" path="@path" fileContent="@file.content" fileTests="@file.tests"></div>
 }

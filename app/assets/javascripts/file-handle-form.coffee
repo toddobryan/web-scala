@@ -1,32 +1,43 @@
-compileWithAjax = (editor) -> 
-    code = editor.getValue()
-    filePath = $('#info').attr('path')
-    $.post('/compile/' + filePath, $.param({line : code}), (result) -> 
-    	$('#prev-content').html("")
-    	$('#compiler-message').html("")
-    	$('#compiler-message').append(result)
-    	)
-	### interactions.setValue("") ###
-	$('body').load(prettyPrint())
-
-postToAjax = (editor) -> 
-    code = editor.getValue()
-    $.post('/interpret', $.param({line : code}), (result) ->
-        $('#prev-content').append('<code class="prettyprint lang-scala">&gt; ' + code + '</code> <br />')
-        $('#prev-content').append('<code class="prettyprint lang-scala">' +
-        						  result +
-        						  '</code><br /><br />')
-    )
-    editor.setValue("")
-    $('body').load(prettyPrint())
+goToInteractions = (editor) ->
+	code = editor.getValue()
+	filePath  = $('#info').attr('path')
+	window.open('/ide/' + filePath, "Interactions", "width=800px,height=800px")
+	
+save = (editor, testEditor) ->
+	code = editor.getValue()
+	testCode = testEditor.getValue()
+	filePath = $('#info').attr('path')
+	$.post('/save/' + filePath, $.param({content : code, test : testCode}), (result) -> 
+		$('#compiler-message').html("")
+		$('#compiler-message').append(result)
+		)
     
+test = () ->
+	filePath = $('#info').attr('path')
+	window.open('/test/' + filePath, "Test Results", "width=800px,height=800px")
+
 runTests = (editor) ->
 	code = editor.getValue()
 	filePath = $('#info').attr('path')
-	# $.post('/compile/' + filePath, $.param({line: code}), (result) -> )
 	window.open('/submitFile/' + filePath)
+	
+titleToggle = (aTitle) ->
+	if($(aTitle).css('display') == "none") 
+		$(aTitle).css('display', 'inline-block')
+	else 
+		$(aTitle).css('display', 'none')
+	
+toggleTest = () ->
+	$('#test-form').toggle()
+	$('#file').toggle()
+	$('#title1').toggle()
+	titleToggle('#title2')
     
 $('document').ready(() ->
+    editorWidth = window.innerWidth
+    navbarHeight = $('div.navbar').height() + parseInt($('div.navbar').css('marginBottom'))
+    formHeight = $('form.form-inline').height() + parseInt($('form.form-inline').css('marginBottom'))
+    editorHeight = window.outerHeight - navbarHeight - formHeight
     ###
     Setting up the file editor.
     ###
@@ -36,7 +47,10 @@ $('document').ready(() ->
     editor.getSession().setMode("ace/mode/scala")
     editor.setValue(fileContent)
     editor.clearSelection()
-    document.getElementById('editor').style.fontSize='20px';
+    #$('#editor').height(editorHeight)
+    #$('#editor').width(editorWidth)
+    #editor.resize()
+    document.getElementById('editor').style.fontSize='12px';
     editor.commands.addCommand({
         name: 'myCommand',
         bindKey: {win: 'Ctrl-Return',  mac: 'Command-Return'},
@@ -44,34 +58,21 @@ $('document').ready(() ->
     })
     $('#compileButton').click(() -> compileWithAjax(editor))
     $('#runTests').click(() -> runTests(editor))
+    $('#enterInteractions').click(() -> goToInteractions(editor))
     ###
-    Setting up the interactions area.
+    Setting up test editor
     ###
-    interactions = ace.edit("interactions")
-    interactions.setTheme("ace/theme/chrome")
-    interactions.getSession().setMode("ace/mode/scala")
-    interactions.commands.addCommand({
-        name: 'myCommand',
-        bindKey: {win: 'Ctrl-Return',  mac: 'Command-Return'},
-        exec: (editor) -> postToAjax(editor)
-    })
-    interactions.setValue("")
-    document.getElementById('interactions').style.fontSize='20px';
-    interactions.getSession().on('change', (e) ->
-    	if(interactions.session.getLength() < 10) 
-    		$('#interactions div.ace_gutter').width(0)
-    		$('#interactions div.ace_scrollbar').width(0)
-    		length = interactions.session.getLength() * 20
-    		$('div#interactions').height(length)
-    		interactions.resize()
-    	else 
-    		$('#interactions div.ace_gutter').width(40)
-    		$('#interactions div.ace_scrollbar').width(20)
-    )
-    $('#interactions div.ace_gutter').width(0)
-    $('#interactions div.ace_scrollbar').width(0)
-	$('#code').submit((e) ->
-		postToAjax(interactions)
-		e.preventDefault()
-	)
+    fileTests = $('#info').attr('fileTests')
+    testeditor = ace.edit("test")
+    testeditor.setTheme("ace/theme/chrome")
+    testeditor.getSession().setMode("ace/mode/scala")
+    testeditor.setValue(fileTests)
+    testeditor.clearSelection()
+    #$('div#test').height(editorHeight)
+    #$('div#test').width(editorWidth)
+    #testeditor.resize()
+    document.getElementById('test').style.fontSize='12px';
+    $('#testButton').click(() -> test())
+    $('#saveButton').click(() -> save(editor, testeditor))
+    $('#toggleTestButton').click(() -> toggleTest())
 )

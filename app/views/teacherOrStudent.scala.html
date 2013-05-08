@@ -2,12 +2,12 @@
 
 @{req.visit.user match {
     case Some(_: models.auth.Teacher) => {
-      <li class="nav-header">Classes</li>
+      <li class="divider-vertical"></li>
       <li><a href="/myClasses">View Classes</a></li>
       <li><a href="/newClass">Add a Class</a></li>
     }
     case Some(_: models.auth.Student) => {
-      <li class="nav-header">Classes</li>
+      <li class="divider-vertical"></li>
       <li><a href="/myClasses">View Classes</a></li>
       <li><a href="/joinClass">Join a Class</a></li>
     }
