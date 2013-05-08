@@ -19,6 +19,8 @@ import scala.concurrent.duration._
 import ExecutionContext.Implicits.global
 import scala.language.postfixOps
 
+import org.dupontmanual.image.{ Bitmap, Image }
+
 object SafeCode {
   
   def runCode(code: => IntpResult): (IntpResult, String) = {
@@ -64,6 +66,14 @@ object WebScala extends Controller {
       case None => Redirect(routes.Application.index()).flashing(("error") -> "You must be logged into run a file.")
     }
   }
+  
+  def resultToHtml(res: Option[AnyRef]): String = res match {
+    case None => ""
+    case Some(x) => x match {
+      case img: Image => <img src={ "data:image/png;base64,%s".format(img.asInstanceOf[Image].base64png) } />.toString
+      case _ => x.toString
+    }
+  }
 
   def interpret = VisitAction { implicit req =>
     println(req.body.asFormUrlEncoded.getOrElse(Map()))
@@ -74,7 +84,7 @@ object WebScala extends Controller {
     println(line)
     val result = SafeCode.runCode { HtmlRepl.repl.interpret(line) }
     result._1 match {
-      case IntpResults.Success => Ok("" + HtmlRepl.repl.valueOfTerm(HtmlRepl.repl.mostRecentVar).getOrElse(""))
+      case IntpResults.Success => Ok(resultToHtml(HtmlRepl.repl.valueOfTerm(HtmlRepl.repl.mostRecentVar)))
       case IntpResults.Error => Ok(result._2)
       case IntpResults.Incomplete => Ok(result._2)
     }

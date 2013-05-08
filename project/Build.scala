@@ -37,7 +37,7 @@ object ApplicationBuild extends Build {
      (scalacOptions ++= Seq("-deprecation", "-feature")) +:
       Nucleus.settings): _*
     
-  )
+  ) dependsOn RootProject( uri("git://github.com/toddobryan/image.git") )
 /*    val main = PlayProject(appName, appVersion, appDependencies, mainLang = SCALA).settings(
       ((resolvers += "t2v.jp repo" at "http://www.t2v.jp/maven-repo/") +:
        (testOptions in Test := Nil) +: 

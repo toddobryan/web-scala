@@ -33,9 +33,11 @@ object HtmlRepl {
   val repl = {
     val settings = new Settings
     settings.embeddedDefaults(new ReplClassLoader(settings.getClass().getClassLoader()))
-    val theRepl = new IMain(settings, new PrintWriter(out))
+    val theRepl = new IMain(settings, new PrintWriter(out)) {
+      override protected def parentClassLoader: ClassLoader = this.getClass.getClassLoader()
+    }
     theRepl.addImports("scala.language.ImplicitConversions")
-    theRepl.addImports("image._")
+    theRepl.addImports("org.dupontmanual.image._")
     theRepl
   }
   
