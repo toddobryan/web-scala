@@ -9,6 +9,7 @@ import scalajdo.DataStore
 import models.auth.Method
 import models.auth.{User, Student}
 import forms.{Binding, InvalidBinding, ValidBinding}
+import util.ControllerHelpers._
 
 
 object LoginForm extends Form {
@@ -55,7 +56,7 @@ object NewUserForm extends Form {
 object Auth extends Controller {
   def login() = VisitAction { implicit req => 
     if (req.method == Method.GET) {
-      Ok(views.html.auth.login(Binding(LoginForm)))
+      Okay(views.html.auth.login(Binding(LoginForm)))
     } else {
       Binding(LoginForm, req) match {
         case ib: InvalidBinding => Ok(views.html.auth.login(ib))
@@ -81,7 +82,7 @@ object Auth extends Controller {
   	  case Some(_) => Redirect(routes.Application.index()).flashing("error" -> "You are already logged in!")
   	  case None => {
   	    if(req.method == Method.GET) {
-  	      Ok(views.html.auth.newUserForm(Binding(NewUserForm)))
+  	      Okay(views.html.auth.newUserForm(Binding(NewUserForm)))
   	    } else {
   	      Binding(NewUserForm, req) match {
   	        case ib: InvalidBinding => Ok(views.html.auth.newUserForm(ib))

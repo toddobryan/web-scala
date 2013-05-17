@@ -11,6 +11,10 @@
 
 @mainNoContainer("File - " + file.title, scripts) {
   @fileSubnav()
+  <div id="message" class="alert alert-info">
+    <button type="button" class="close" id="messageButton">&times;</button>
+    <div id="compiler-message"></div>
+  </div>
   <form id="file"> 
 	<div id="editor">
 	</div>

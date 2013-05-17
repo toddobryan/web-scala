@@ -4,7 +4,7 @@ import scala.tools.nsc.interpreter.{ Results => IntpResults }
 import scala.tools.nsc.interpreter.IR.{ Result => IntpResult}
 import play.api._
 import play.api.mvc._
-import webscala.HtmlRepl
+import webscala._ 
 import scalajdo._
 import models.files._
 import models.auth._
@@ -14,157 +14,19 @@ import org.joda.time._
 import forms._
 import forms.fields._
 import forms.validators._
-import scala.concurrent._
-import scala.concurrent.duration._
-import ExecutionContext.Implicits.global
-import scala.language.postfixOps
+import util.ControllerHelpers._
 
-import org.dupontmanual.image.{ Bitmap, Image }
-
-object SafeCode {
-  
-  def runCode(code: => IntpResult): (IntpResult, String) = {
-    val start = HtmlRepl.out.getBuffer.length
-    val res = future { code }
-    try {
-      val eventualResult = Await.result(res, 10000 millis)
-      eventualResult match {
-        case IntpResults.Success => (IntpResults.Success, "No errors!")
-        case IntpResults.Incomplete => (IntpResults.Incomplete, "Your code was not complete. Check near the end.")
-        case IntpResults.Error => (IntpResults.Error, "The following error occurred:\n" + HtmlRepl.out.getBuffer.substring(start))
-      }
-    } catch {
-      case to: java.util.concurrent.TimeoutException => (IntpResults.Error, "Timeout Exception. Check for infinite loops.")
-      case e: Exception => (IntpResults.Error, "Exception Thrown: " + e)
-    }
-  }
-  
-}
 
 object WebScala extends Controller {
   //lazy val repl = new HtmlRepl()
 
   def ide = Authenticated { implicit req =>
-    Ok(views.html.webscala.ide())
-  }
-  
-  def fileIde(titles: String) = VisitAction { implicit req =>
-    req.visit.user match {
-      case Some(u: User) => {
-        val titleList = titles.split("/").toList
-        val matchingFile = u.root.findItem(titleList)
-        matchingFile match {
-          case Some(f: File) => {
-            val result = SafeCode.runCode { HtmlRepl.repl.interpret(f.content) }
-            Ok(views.html.webscala.ideSkeleton(f, result._2))
-          }
-          case _ => {
-            Redirect(routes.Application.index()).flashing(("error") -> "The file could not be found.")
-          }
-        }
-      }
-      case None => Redirect(routes.Application.index()).flashing(("error") -> "You must be logged into run a file.")
-    }
-  }
-  
-  def resultToHtml(res: Option[AnyRef]): String = res match {
-    case None => ""
-    case Some(x) => x match {
-      case img: Image => <img src={ "data:image/png;base64,%s".format(img.asInstanceOf[Image].base64png) } />.toString
-      case _ => x.toString
-    }
-  }
-
-  def interpret = VisitAction { implicit req =>
-    println(req.body.asFormUrlEncoded.getOrElse(Map()))
-    val line = req.body.asFormUrlEncoded.getOrElse(Map()).getOrElse("line", Nil) match {
-      case Nil => ""
-      case fst :: rst => fst
-    }
-    println(line)
-    val result = SafeCode.runCode { HtmlRepl.repl.interpret(line) }
-    result._1 match {
-      case IntpResults.Success => Ok(resultToHtml(HtmlRepl.repl.valueOfTerm(HtmlRepl.repl.mostRecentVar)))
-      case IntpResults.Error => Ok(result._2)
-      case IntpResults.Incomplete => Ok(result._2)
-    }
-  }
-  
-  def compile(titles: String) = VisitAction { implicit req =>
-    HtmlRepl.repl.reset()
-    val content = req.body.asFormUrlEncoded.getOrElse(Map()).getOrElse("line", Nil) match {
-      case Nil => ""
-      case fst :: rst => fst
-    }
-    req.visit.user match {
-      case None => false
-      case Some(user) => {
-        user.root.findItem(titles.split("/").toList) match {
-          case None => println("Error in saving file.")
-          case Some(_: Directory) => println("This is a directory. What happened?")
-          case Some(f: File) => {
-            f.content_=(content)
-            f.lastModified_=(DateTime.now)
-            DataStore.pm.makePersistent(f.owner)
-            println("No errors in compiling")
-          }
-        }
-      }
-    }
-    val result = SafeCode.runCode { HtmlRepl.repl.interpret(content) }
-    Ok(result._2)
-  }
-  
-  def save(titles: String) = VisitAction { implicit req =>
-  	val content = req.body.asFormUrlEncoded.getOrElse(Map()).getOrElse("content", Nil) match {
-      case Nil => ""
-      case fst :: rst => fst
-    }
-  	val testCode = req.body.asFormUrlEncoded.getOrElse(Map()).getOrElse("test", Nil) match {
-  	  case Nil => ""
-  	  case fst :: rst => fst
-  	}
-  	req.visit.user match {
-      case None => false
-      case Some(user) => {
-        user.root.findItem(titles.split("/").toList) match {
-          case None => println("Error in saving file test.")
-          case Some(_: Directory) => println("This is a directory. What happened?")
-          case Some(f: File) => {
-            f.content_=(content)
-            f.tests_=(testCode)
-            f.lastModified_=(DateTime.now)
-            DataStore.pm.makePersistent(f.owner)
-            println("No errors in saving")
-          }
-        }
-      }
-    }
-  	Ok("Content and Tests saved.")
-  }
-  
-  def test(titles: String) = VisitAction { implicit req =>
-    req.visit.user match {
-      case None => Redirect(routes.Application.index).flashing(("error" -> "You must be logged into"))
-      case Some(user) => {
-        user.root.findItem(titles.split("/").toList) match {
-          case None => Redirect(routes.Application.index).flashing(("error" -> "File not found."))
-          case Some(_: Directory) => Redirect(routes.Application.index).flashing(("error" -> "This is a directory"))
-          case Some(f: File) => {
-           // f.content_=(content)
-            f.lastModified_=(DateTime.now)
-            DataStore.pm.makePersistent(f.owner)
-            println("No errors in compiling")
-            Ok("Dog")
-          }
-        }
-      }
-    }  
+    Okay(views.html.webscala.ide())
   }
   
   case class NewFileForm(val dir: Directory) extends Form {
     val fileName = new TextField("fileName")
-    val dirOrFile = new ChoiceField("folder", List(("File", "file"), ("Directory", "dir")))
+    val dirOrFile = new ChoiceField("Type", List(("File", "file"), ("Directory", "dir")))
     def fields = List(fileName, dirOrFile)
     
     override def validate(vb: ValidBinding): ValidationError = {
@@ -175,100 +37,61 @@ object WebScala extends Controller {
     }
   }
   
-  def newFileHome(): Action[AnyContent] = newFile("")
+  def newFileHome() = newFile("")
   
-  def newFile(titles: String): Action[AnyContent] = VisitAction { implicit req =>
+  def newFile(titles: String) = VisitAction { implicit req =>
     val titlesList = if(titles == "") Nil else titles.split("/").toList
-    req.visit.user match {
-        case None => Redirect(routes.Application.index()).flashing(("error" -> "You must be logged in to create a file"))
-        case Some(user) => {
-          user.root.findItem(titlesList) match {
-            case None => Redirect(routes.WebScala.fileManagerHome).flashing(("error" -> "Directory not found"))
-            case Some(_: File) => Redirect(routes.WebScala.fileManagerHome).flashing(("error" -> "Cannot add to a file"))
-            case Some(dir: Directory) => {
-              if(req.method == "GET") {
-                Ok(views.html.webscala.newFile(Binding(NewFileForm(dir))))
-              } else {	
-                Binding(NewFileForm(dir), req) match {
-                  case ib: InvalidBinding => Ok(views.html.webscala.newFile(ib))
-                  case vb: ValidBinding => {
-                    val name = vb.valueOf(NewFileForm(dir).fileName).trim()
-                    val dirOrFile = vb.valueOf(NewFileForm(dir).dirOrFile)
-                    if(dirOrFile == "dir") {
-                      val newDir = new Directory(name, user, Nil, 2)
-                      dir.addDirectory(newDir)
-                    } else {
-                      val file = new File(name, user, "/* Enter Code Here */", Some(DateTime.now))
-                      dir.addFile(file)
-                    }
-                    if(titles == "") {
-                      Redirect("/fileManager").flashing(("success" -> "Item Created"))
-                    } else {
-                      Redirect("/fileManager/" + titles).flashing(("success" -> "Item Created"))
-                    }
-                  }
-                }
-              }
-            }
-         }
-       }
-    }
-  }
-  
-  // this doesn't work lol, haven't updated it.
-  def deleteFile(dirId: Long)(id: Long) = VisitAction { implicit req =>
-    req.visit.user match {
-      case None => Redirect(routes.Application.index()).flashing(("error" -> "You must be logged in to delete a file."))
-      case Some(user) => {
-        val maybeFile = File.getById(id)
-        maybeFile match {
-          case None => Redirect(routes.Application.index()).flashing(("error" -> "No such file exists"))
-          case Some(f) => {
-            DataStore.pm.deletePersistent(f)
-            Redirect(routes.WebScala.fileManagerHome()).flashing(("success" -> "File successfully deleted"))
+    asUser { user => 
+      implicit val maybeItem = user.root.findItem(titlesList)
+      withDir { dir =>
+        formHandle(form = NewFileForm(dir), title = "Add File") { vb =>
+          val name = vb.valueOf(NewFileForm(dir).fileName).trim()
+          val dirOrFile = vb.valueOf(NewFileForm(dir).dirOrFile)
+          if(dirOrFile == "dir") {
+            val newDir = new Directory(name, user, Nil, 2)
+            dir.addDirectory(newDir)
+          } else {
+            val file = new File(name, user, "/* Enter Code Here */", Some(DateTime.now))
+            dir.addFile(file)
+          }
+          if(titles == "") {
+            Redirect("/fileManager").flashing(("success" -> "Item Created"))
+          } else {
+            Redirect("/fileManager/" + titles).flashing(("success" -> "Item Created"))
           }
         }
       }
-    }  
+    }
   }
   
   def fileManagerHome() = VisitAction { implicit req =>
-    req.visit.user match {
-      case None => Redirect(routes.Application.index()).flashing(("error" -> "You must be logged in to access files"))
-      case Some(user) => Ok(views.html.webscala.displayFiles(user.root, ""))
-    }
+    asUser { user => Okay(views.html.webscala.displayFiles(user.root, "")) }
   }
   
  def fileManager(titles: String) = VisitAction { implicit req =>
-    req.visit.user match {
-      case None => Redirect(routes.Application.index()).flashing(("error" -> "You must be logged in to access files"))
-      case Some(user) => {
-        val directory = user.root
-        val titlesList = titles.split("/").toList
-        findFile(directory, titlesList)
-      }
+    asUser { user =>
+      val directory = user.root
+      val titlesList = titles.split("/").toList
+      findFile(directory, titlesList)
     }
-  }
+ }
 
   def findFile(dir: Directory, title: List[String])(implicit req: VisitRequest[AnyContent]) = {
     val path = title.mkString("/")
-    dir.findItem(title) match {
-      case None => Redirect(routes.Application.index()).flashing(("error" -> "No Such File"))
-      case Some(f: File) => Ok(views.html.webscala.newGetFile(f, path))
-      case Some(d: Directory) => Ok(views.html.webscala.displayFiles(d, path))
-    }
+    val maybeItem = dir.findItem(title)
+    dirOrFile(maybeItem) 
+      { d: Directory => Okay(views.html.webscala.displayFiles(d, path)) }
+      { f: File => Okay(views.html.webscala.newGetFile(f, path)) }
   }
   
-  def findStudentFile(bString: String, sString: String, dir: Directory, title: List[String])(implicit req: VisitRequest[AnyContent]) = {
+  def findStudentFile(bString: String, sString: String, dir: Directory, title: List[String])
+                     (implicit req: VisitRequest[AnyContent]) = {
     val path = title.mkString("/")
-    if(path == "") Ok(views.html.webscala.viewStudentFiles(bString, sString, dir, path))
-    else {
-    	dir.findItem(title) match {
-    		case None => Redirect(routes.Application.index()).flashing(("error" -> "No Such File"))
-    		case Some(f: File) => Ok(views.html.webscala.viewStudentFile(bString, sString, f, path))
-    		case Some(d: Directory) => Ok(views.html.webscala.viewStudentFiles(bString, sString, d, path))
-    	}
-    }
+    if(path == "") Okay(views.html.webscala.viewStudentFiles(bString, sString, dir, path))
+    val maybeItem = dir.findItem(title)
+    dirOrFile(maybeItem)
+      { d: Directory => Okay(views.html.webscala.viewStudentFiles(bString, sString, d, path)) }
+      { f: File => Okay(views.html.webscala.viewStudentFile(bString, sString, f, path)) }
   }
   
   object NewBlockForm extends Form {
@@ -286,60 +109,33 @@ object WebScala extends Controller {
   }
   
   def newBlock() = VisitAction {implicit req =>
-    req.visit.user match {
-      case Some(t: Teacher) => {
-        if(req.method == "GET") {
-          Ok(views.html.webscala.newBlock(Binding(NewBlockForm)))
-        } else {
-          Binding(NewBlockForm, req) match {
-            case ib: InvalidBinding => Ok(views.html.webscala.newBlock(ib))
-            case vb: ValidBinding => {
-              val blockName = vb.valueOf(NewBlockForm.blockName).trim
-              val newBlock = new Block(blockName, t)
-              DataStore.pm.makePersistent(newBlock)
-              Redirect(routes.WebScala.myBlocks()).flashing(("success" -> "New Class Created"))
-            }
-          }
-        }
-      }
-      case _ => {
-        Redirect(routes.Application.index()).flashing(("error" -> "You must be logged in as a teacher to create a block."))
+    asTeacher { t => 
+      formHandle( form = NewBlockForm, title = "Add Block") { 
+        vb =>
+        val blockName = vb.valueOf(NewBlockForm.blockName).trim
+        val newBlock = new Block(blockName, t)
+        DataStore.pm.makePersistent(newBlock)
+        Redirect(routes.WebScala.myBlocks()).flashing(("success" -> "New Class Created"))
       }
     }
   }
   
-  def myBlocks() = VisitAction {implicit req =>
-    req.visit.user match {
-      case Some(t: Teacher) => {
-        Ok(views.html.webscala.displayBlocksTeacher(Block.getByTeacher(t)))
-      }
-      case Some(s: Student) => {
-        Ok(views.html.webscala.displayBlocksStudent(Block.getByStudent(s)))
-      }
-      case None => {
-        Redirect(routes.Application.index()).flashing(("error") -> "You must be logged in to see your classes.")
-      }
-    }
+  def myBlocks() = VisitAction { implicit req =>
+    teacherOrStudent
+      {t => Okay(views.html.webscala.displayBlocksTeacher(Block.getByTeacher(t)))}
+      {s => Okay(views.html.webscala.displayBlocksStudent(Block.getByStudent(s)))}
   }
   
   def findMyBlock(name: String) = VisitAction {implicit req =>
-    req.visit.user match {
-      case Some(t: Teacher) => {
-        val block = Block.getByTeacher(t).find(_.name == name)
-        block match {
-          case Some(b) => Ok(views.html.webscala.displayBlockTeacher(b))
-          case None => Redirect(routes.WebScala.myBlocks).flashing(("error") -> "This class does not exist")
-        }
-      }
-      case Some(s: Student) => {
-        val block = Block.getByStudent(s).find(_.name == name)
-        block match {
-          case Some(b) => Ok(views.html.webscala.displayBlockStudent(b))
-          case None => Redirect(routes.WebScala.myBlocks).flashing(("error" -> "This class does not exist"))
-        }
-      }
-      case None => Redirect(routes.Application.index()).flashing(("error" -> "You must be logged in to see your classes."))
+    val tAction: ToResult[Teacher] = { t => 
+      val maybeBlock = Block.getByTeacher(t).find(_.name == name)
+      withBlock(maybeBlock) { b: Block => Okay(views.html.webscala.displayBlockTeacher(b)) }
     }
+    val sAction: ToResult[Student] = { s => 
+      val maybeBlock = Block.getByStudent(s).find(_.name == name)
+      withBlock(maybeBlock) { b: Block => Okay(views.html.webscala.displayBlockTeacher(b)) }
+    }
+    teacherOrStudent { tAction } { sAction}
   }
   
   object JoinBlockForm extends Form {
@@ -364,41 +160,21 @@ object WebScala extends Controller {
     }
   }
   
-  def joinBlock() = VisitAction {implicit req =>
-    req.visit.user match {
-      case Some(s: Student) => {
-        if(req.method == "GET") {
-          Ok(views.html.webscala.joinBlock(Binding(JoinBlockForm)))
-        } else {
-          Binding(JoinBlockForm, req) match {
-            case ib: InvalidBinding => Ok(views.html.webscala.joinBlock(ib))
-            case vb: ValidBinding => {
-              Block.getByName(vb.valueOf(JoinBlockForm.blockName)) match {
-                case Some(b: Block) => {
-                  if(b.students.contains(s)) {
-                    Redirect(routes.WebScala.joinBlock()).flashing(("error") -> "You are already a member of this class.")
-                  } else {
-                    b.addStudent(s)
-                    DataStore.pm.makePersistent(b)
-                    s.root.addDirectory(new Directory(b.name, s, Nil))
-                    DataStore.pm.makePersistent(s)
-                    Redirect(routes.WebScala.myBlocks).flashing(("success") -> ("You have been added to this class, and a class directory" 
-                                                                               + " has been added to your home folder."))
-                  }
-                }
-                case None => {
-                  Redirect(routes.Application.index()).flashing(("error") -> "The class was not found by some strange course of events.")
-                }
-              }     
-            }
+  def joinBlock() = VisitAction { implicit req =>
+    asStudent { s => 
+      formHandle( form = JoinBlockForm, title = "Join Block") { vb => 
+        implicit val maybeBlock = Block.getByName(vb.valueOf(JoinBlockForm.blockName)) 
+        withBlock { b =>
+          if(b.students.contains(s))  Redirect(routes.WebScala.joinBlock()).flashing(("error") -> "You are already a member of this class.")
+          else {
+            b.addStudent(s)
+            DataStore.pm.makePersistent(b)
+            s.root.addDirectory(new Directory(b.name, s, Nil))
+            DataStore.pm.makePersistent(s)
+            Redirect(routes.WebScala.myBlocks).flashing(("success") -> ("You have been added to this class, and a class directory" 
+                                                                         + " has been added to your home folder."))
           }
         }
-      }
-      case Some(_) => {
-        Redirect(routes.Application.index()).flashing(("error") -> "You must be logged in as a student to join a class.")
-      }
-      case None => {
-        Redirect(routes.Application.index()).flashing(("error") -> "You must be logged in to join a class.")
       }
     }
   }
@@ -418,231 +194,132 @@ object WebScala extends Controller {
   }
   
   def newAssignment(block: String) = VisitAction { implicit req =>
-    req.visit.user match {
-      case Some(t: Teacher) => {
-        def maybeBlock = Block.getByTeacher(t).find(_.name == block)
-        maybeBlock match {
-          case Some(b) => {
-            if(req.method == "GET") Ok(views.html.webscala.newAssignment(Binding(NewAssignmentForm(b))))
-            else {
-              Binding(NewAssignmentForm(b), req) match {
-                case ib: InvalidBinding => Ok(views.html.webscala.newAssignment(ib))
-                case vb: ValidBinding => {
-                  val assignName = vb.valueOf(NewAssignmentForm(b).assignmentName).trim
-                  val initialTestCode =
+    asTeacher { t =>
+      implicit val maybeBlock = Block.getByTeacher(t).find(_.name == block)
+      withBlock { b =>
+        formHandle(form = NewAssignmentForm(b), title = "New Assignment") { vb =>
+          val assignName = vb.valueOf(NewAssignmentForm(b).assignmentName).trim
+          val initialTestCode =
 """// You can test student code by testing functionality.
 // Then create a value called myTests, which is a list of
 // (String, Boolean, String) triples, where the first
 // string is the title for a test, the boolean is the result
 // of the test (true=success, false=failure), and the
 // last string is a diagnostic for the student."""
-                  val assignment = new Assignment(assignName, "", initialTestCode)
-                  b.addAssignemnt(assignment)
-                  DataStore.pm.makePersistent(b)
-                  Redirect(routes.WebScala.editAssignment(b.name, assignName))
-                }
-              }
-            }
-          }
-          case None => Redirect(routes.Application.index()).flashing(("error") -> "Block not found.")
+          val assignment = new Assignment(assignName, "", initialTestCode)
+          b.addAssignemnt(assignment)
+          DataStore.pm.makePersistent(b)
+          Redirect(routes.WebScala.editAssignment(b.name, assignName))
         }
       }
-      case _ => Redirect(routes.Application.index()).flashing(("error") -> "You must be logged in as a teacher to create an assignment.")
     }
   }
   
   def editAssignment(block: String, assignment: String) = VisitAction {implicit req =>
-    req.visit.user match {
-      case Some(t: Teacher) => {
-        def maybeBlock = Block.getByTeacher(t).find(_.name == block)
-        maybeBlock match {
-          case None => Redirect(routes.Application.index()).flashing(("error") -> "This class was not found")
-          case Some(b) => {
-              def maybeAssign = b.assignments.find(_.title == assignment)
-              maybeAssign match {
-                case None => Redirect(routes.Application.index()).flashing(("error") -> "This class was not found")
-                case Some(a) => {
-                  if(req.method == "GET") {
-                    Ok(views.html.webscala.editAssignment(b, a))
-                  } else {
-                    val startCode = req.body.asFormUrlEncoded.getOrElse(Map()).getOrElse("start", Nil) match {
-                      case Nil => ""
-                      case fst :: rst => fst
-                    }
-                    val testCode = req.body.asFormUrlEncoded.getOrElse(Map()).getOrElse("test", Nil) match {
-                      case Nil => ""
-                      case fst :: rst => fst
-                    }
-                    a.starterCode_=(startCode)
-                    a.testCode_=(testCode)
-                    DataStore.pm.makePersistent(b)
-                    Redirect(routes.WebScala.findMyBlock(b.name))
-                  }
-                }
-              }
-            }
+    asTeacher { t =>
+      implicit val maybeBlock = Block.getByTeacher(t).find(_.name == block)
+      withBlock { b => 
+        implicit val maybeAssign = b.assignments.find(_.title == assignment)
+        withAssignment { a => 
+          if(req.method == "GET") {
+            Okay(views.html.webscala.editAssignment(b, a))
+          } else {
+            val startCode = getParameter(req, "start")
+            val testCode = getParameter(req, "test")
+            a.starterCode_=(startCode)
+            a.testCode_=(testCode)
+            DataStore.pm.makePersistent(b)
+            Redirect(routes.WebScala.findMyBlock(b.name))
+          }
         }
       }
-      case _ => Redirect(routes.Application.index()).flashing(("error") -> "You must be logged in as a teacher to edit an assignment.")
     }
   }
   
   def startAssignment(block: String, assignment: String) = VisitAction { implicit req =>
-    req.visit.user match {
-      case Some(u: User) => {
-        def maybeBlock = Block.getByName(block)
-        maybeBlock match {
-          case Some(b) => {
-            def maybeAssign = b.assignments.find(_.title == assignment)
-            maybeAssign match {
-              case Some(a) => {
-                def starterCode = a.starterCode
-                def maybeClassDir = u.root.content.find(_.title == block)
-                maybeClassDir match {
-                  case Some(d: Directory) => {
-                    val alreadyAssigned = d.content.find(_.title == assignment)
-                    alreadyAssigned match {
-                      case None => {
-                        d.addFile(new File(a.title, u, starterCode))
-                        DataStore.pm.makePersistent(u)
-                        Redirect(routes.WebScala.fileManager(block + "/" + assignment))
-                      }
-                      case _ => {
-                        Redirect(routes.WebScala.fileManager(block + "/" + assignment))
-                      }
-                    }
-                  }
-                  case _ => Redirect(routes.Application.index()).flashing(("error") -> "A folder for this class was not found, so the assignment could not be added. Create a folder with this class's name in your home folder.")
-                }
-              }
-              case None => Redirect(routes.Application.index()).flashing(("error") -> "This file was not found.")
-            }
-          }
-          case None => Redirect(routes.Application.index()).flashing(("error") -> "This class was not found.")
-        }
-      }
-      case _ => Redirect(routes.Application.index()).flashing(("error") -> "You are not logged in.")
-    }
-    
+    asUser { u =>
+     withBlock(Block.getByName(block)) { b =>
+       implicit val maybeAssign = b.assignments.find(_.title == assignment)
+       withAssignment { a => 
+         def starterCode = a.starterCode
+         implicit val maybeClassDir = u.root.content.find(_.title == block)
+         withDir {d => 
+           val alreadyAssigned = d.content.find(_.title == assignment)
+           alreadyAssigned match {
+             case None => {
+               d.addFile(new File(a.title, u, starterCode))
+               DataStore.pm.makePersistent(u)
+               Redirect(routes.WebScala.fileManager(block + "/" + assignment))
+             }
+             case _ => Redirect(routes.WebScala.fileManager(block + "/" + assignment))
+           }
+         }
+       }
+     }
+    } 
   }
   
   def submitFile(block: String, assignment: String) = VisitAction { implicit req => 
-    req.visit.user match {
-      case Some(u: User) => {
-        def maybeBlock = Block.getByName(block)
-        maybeBlock match {
-          case Some(b) => {
-            val maybeAssign = b.assignments.find(_.title == assignment)
-            maybeAssign match {
-              case Some(a) => {
-                val matchingFile = u.root.findItem(List(block, assignment))
-                matchingFile match {
-                  case Some(f: File) => {
-                    Ok(views.html.webscala.showTestResults(a, f))
-                  }
-                  case _ => {
-                    Redirect(routes.Application.index()).flashing(("error") -> "The matching file could not be found.")
-                  }
-                }
-              }
-              case None => Redirect(routes.Application.index()).flashing(("error") -> "The assignment could not be found.")
-            }
-          }
-          case None => Redirect(routes.Application.index()).flashing(("error") -> "The specified block could not be found.")
+    asUser { u => 
+      withBlock(Block.getByName(block)) { b => 
+        implicit val maybeAssign = b.assignments.find(_.title == assignment)
+        withAssignment { a =>
+          implicit val matchingFile = u.root.findItem(List(block, assignment))
+          withFile { f => Okay(views.html.webscala.showTestResults(a, f)) }
         }
       }
-      case None => Redirect(routes.Application.index()).flashing(("error") -> "You must be logged into submit tests.")
     }
   }
   
   def getStudentFiles(block: String, student: String) = VisitAction {implicit req =>
-    req.visit.user match {
-      case Some(t: Teacher) => {
-        val blocks = Block.getByTeacher(t)
-        val maybeBlock = blocks.find(_.name == block)
-        maybeBlock match {
-          case Some(b: Block) => {
-            val maybeStudent = b.students.find(_.username == student)
-            maybeStudent match {
-              case Some(s: Student) => {
-                val userRoot = s.root.findItem(block)
-                userRoot match {
-                  case Some(dir: Directory) => {
-                    findStudentFile(block, student, dir, Nil)
-                  }
-                  case _ => Redirect(routes.Application.index()).flashing(("error") -> "User's class directory not found. It may have been deleted.")
-                }
-              }
-              case _ => Redirect(routes.Application.index()).flashing(("error") -> "Student with given name not found")
-            }
-          }
-          case _ => Redirect(routes.Application.index()).flashing(("error") -> "Block with given name not found")
+    asTeacher { t => 
+      val blocks = Block.getByTeacher(t)
+      implicit val maybeBlock = blocks.find(_.name == block)
+      withBlock { b => 
+        val maybeStudent = b.students.find(_.username == student)
+        withObject(maybeStudent, "No such student exists.") { s =>
+          val classRoot = s.root.findItem(block)
+          withDir(classRoot){ dir => findStudentFile(block, student, dir, Nil) }
         }
       }
-      case _ => Redirect(routes.Application.index()).flashing(("error") -> "You must be logged as a teacher to view student files.")
     }
   }
   
   def getStudentFiles(block: String, student: String, titles: String) = VisitAction {implicit req =>
-    req.visit.user match {
-      case Some(t: Teacher) => {
-        val blocks = Block.getByTeacher(t)
-        val maybeBlock = blocks.find(_.name == block)
-        maybeBlock match {
-          case Some(b: Block) => {
-            val maybeStudent = b.students.find(_.username == student)
-            maybeStudent match {
-              case Some(s: Student) => {
-                val userRoot = s.root.findItem(block)
-                userRoot match {
-                  case Some(dir: Directory) => {
-                    val path = titles.split("/").toList
-                    findStudentFile(block, student, dir, path)
-                  }
-                  case _ => Redirect(routes.Application.index()).flashing(("error") -> "User's class directory not found. It may have been deleted.")
-                }
-              }
-              case _ => Redirect(routes.Application.index()).flashing(("error") -> "Student with given name not found")
-            }
+    asTeacher { t => 
+      val blocks = Block.getByTeacher(t)
+      withBlock(blocks.find(_.name == block)) { b =>
+        implicit val maybeStudent = b.students.find(_.username == student)
+        withObject[Student]("Student with given name not in block.") { s =>
+          implicit val userRoot = s.root.findItem(block)
+          withDir { dir =>
+            val path = titles.split("/").toList
+            findStudentFile(block, student, dir, path)
           }
-          case _ => Redirect(routes.Application.index()).flashing(("error") -> "Block with given name not found")
         }
       }
-      case _ => Redirect(routes.Application.index()).flashing(("error") -> "You must be logged as a teacher to view student files.")
     }
   }
   
   def getStudentAssignmentTest(block: String, student: String, titles: String)= VisitAction {implicit req =>
-    req.visit.user match {
-      case Some(t: Teacher) => {
-        val blocks = Block.getByTeacher(t)
-        val maybeBlock = blocks.find(_.name == block)
-        maybeBlock match {
-          case Some(b: Block) => {
-            val maybeStudent = b.students.find(_.username == student)
-            maybeStudent match {
-              case Some(s: Student) => {
-                val userRoot = s.root.findItem(block)
-                userRoot match {
-                  case Some(dir: Directory) => {
-                    val path = titles.split("/").toList
-                    val maybeFile = dir.findItem(path)
-                    val maybeAssign = b.assignments.find(_.title == path.head)
-                    (maybeFile, maybeAssign) match {
-                      case (Some(f: File), Some(a: Assignment)) =>Ok(views.html.webscala.showTestResults(a, f))
-                      case _ => Redirect(routes.Application.index()).flashing(("error") -> "A file or assignment with given name could not be found.")
-                    }
-                  }
-                  case _ => Redirect(routes.Application.index()).flashing(("error") -> "User's class directory not found. It may have been deleted.")
-                }
-              }
-              case _ => Redirect(routes.Application.index()).flashing(("error") -> "Student with given name not found")
+    asTeacher { t => 
+      val blocks = Block.getByTeacher(t)
+      implicit val maybeBlock = blocks.find(_.name == block)
+      withBlock { b =>
+        implicit val maybeStudent = b.students.find(_.username == student)
+        withObject[Student]("Student with given name not in block.") { s =>
+          implicit val userRoot = s.root.findItem(block)
+          withDir { dir => 
+            val path = titles.split("/").toList
+            val maybeFile = dir.findItem(path)
+            val maybeAssign = b.assignments.find(_.title == path.head)
+            (maybeFile, maybeAssign) match {
+              case (Some(f: File), Some(a: Assignment)) =>Okay(views.html.webscala.showTestResults(a, f))
+              case _ => Redirect(routes.Application.index()).flashing(("error") -> "A file or assignment with given name could not be found.")
             }
           }
-          case _ => Redirect(routes.Application.index()).flashing(("error") -> "Block with given name not found")
         }
       }
-      case _ => Redirect(routes.Application.index()).flashing(("error") -> "You must be logged as a teacher to view student files.")
     }
   }
 }

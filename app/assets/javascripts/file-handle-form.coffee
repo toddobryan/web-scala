@@ -6,8 +6,10 @@ goToInteractions = (editor) ->
 save = (editor, testEditor) ->
 	code = editor.getValue()
 	testCode = testEditor.getValue()
+	alert(testCode)
 	filePath = $('#info').attr('path')
 	$.post('/save/' + filePath, $.param({content : code, test : testCode}), (result) -> 
+		$('#message').css('display', 'block')
 		$('#compiler-message').html("")
 		$('#compiler-message').append(result)
 		)
@@ -33,6 +35,9 @@ toggleTest = () ->
 	$('#title1').toggle()
 	titleToggle('#title2')
     
+toggleAlert = () ->
+	$('#message').css('display', 'none')
+
 $('document').ready(() ->
     editorWidth = window.innerWidth
     navbarHeight = $('div.navbar').height() + parseInt($('div.navbar').css('marginBottom'))
@@ -75,4 +80,6 @@ $('document').ready(() ->
     $('#testButton').click(() -> test())
     $('#saveButton').click(() -> save(editor, testeditor))
     $('#toggleTestButton').click(() -> toggleTest())
+    $('#messageButton').click(() -> toggleAlert())
+    $('#message').css('display', 'none')
 )

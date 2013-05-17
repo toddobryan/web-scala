@@ -7,8 +7,36 @@ import java.io.StringWriter
 import java.io.PrintWriter
 import scala.annotation.Annotation
 import scala.util.{Try, Success, Failure}
+import scala.concurrent._
+import scala.concurrent.duration._
+import ExecutionContext.Implicits.global
+import scala.language.postfixOps
+import scala.tools.nsc.interpreter.{ Results => IntpResults }
+import scala.tools.nsc.interpreter.IR.{ Result => IntpResult}
+
+import org.dupontmanual.image.{ Bitmap, Image }
 
 class HtmlRepl {
+  
+}
+
+object SafeCode {
+  
+  def runCode(code: => IntpResult): (IntpResult, String) = {
+    val start = HtmlRepl.out.getBuffer.length
+    val res = future { code }
+    try {
+      val eventualResult = Await.result(res, 10000 millis)
+      eventualResult match {
+        case IntpResults.Success => (IntpResults.Success, "No errors!")
+        case IntpResults.Incomplete => (IntpResults.Incomplete, "Your code was not complete. Check near the end.")
+        case IntpResults.Error => (IntpResults.Error, "The following error occurred:\n" + HtmlRepl.out.getBuffer.substring(start))
+      }
+    } catch {
+      case to: java.util.concurrent.TimeoutException => (IntpResults.Error, "Timeout Exception. Check for infinite loops.")
+      case e: Exception => (IntpResults.Error, "Exception Thrown: " + e)
+    }
+  }
   
 }
 
@@ -41,52 +69,11 @@ object HtmlRepl {
     theRepl
   }
   
-  // Jim's stuff for testing.
-  
-  def isCorrectType(toCheck: Option[AnyRef]): Boolean = {
-    toCheck match {
-      case Some(l: List[_]) => {
-        l match {
-          case Nil => true
-          case x :: xs => {
-            x match {
-              case p: (_, _) => {
-                p._1 match {
-                  case s: String => {
-                    p._2 match {
-                      case b: Boolean => true
-                      case _ => false
-                    }
-                  }
-                  case _ => false
-                }
-              }
-              case _ => false
-            }
-          }
-        } 
-      }
-      case _ => false
-    }
-  }
-  
-  def unwrapTests(theTests: Option[AnyRef]): List[(String, Boolean)] = {
-    theTests match {
-      case Some(tests: List[_]) => {
-       for(test <- tests) yield {
-         test match {
-           case p: (_, _) => {
-             p._1 match {
-               case s: String => {
-                 p._2 match {
-                   case b: Boolean => (s, b)
-                 }
-               }
-             }
-           }
-         }
-       }
-      }
+  def resultToHtml(res: Option[AnyRef]): String = res match {
+    case None => ""
+    case Some(x) => x match {
+      case img: Image => <img class="image-obj" src={ "data:image/png;base64,%s".format(img.asInstanceOf[Image].base64png) } />.toString
+      case _ => x.toString
     }
   }
 }

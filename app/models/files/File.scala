@@ -7,7 +7,7 @@ import org.joda.time.DateTime
 import scalajdo._
 import models.auth._
 import scala.tools.nsc.interpreter.{ Results => IntpResults }
-import webscala.HtmlRepl
+import webscala._
 
 abstract class Item {
   def title: String
@@ -89,6 +89,8 @@ class File extends Item {
     "%s -- %s".format(title, owner)
   }
   
+  def testName: String = objectName(title) + "Test"
+  
   def objectName(s: String): String = {
     s.split(" ").map(capitalize(_)).mkString("")
   }
@@ -98,11 +100,11 @@ class File extends Item {
   }
   
   def defaultTestCode(s: String): java.lang.String = {
-"""import org.scalatest.Suite
+"""import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
 
 // Do not change the name of this test object, please!
-class """ + objectName(s) + "Test" + """ extends Suite {
+class """ + objectName(s) + "Test" + """ extends FunSuite with ShouldMatchers {
   test("sample") {
     val x = 2 + 2
 	x should be === (4)
@@ -182,8 +184,6 @@ class """ + objectName(s) + "Test" + """ extends Suite {
         owner match {
           case t: Teacher => Block.getByTeacher(t).find(_.name == pathList.head)
           case s: Student => {
-            println(Block.getByStudent(s))
-            println(Block.getAll)
             Block.getByStudent(s).find(_.name == pathList.head)
           }
       }
@@ -191,48 +191,43 @@ class """ + objectName(s) + "Test" + """ extends Suite {
     }
   }
   
-  def runTests(assignment: Assignment): scala.xml.Elem  = {
-    HtmlRepl.repl.reset()
-    println(content)
-    val errorStart1 = HtmlRepl.out.getBuffer.length
-    val contentResult = HtmlRepl.repl.interpret(content)
-    val contentError = HtmlRepl.out.getBuffer.substring(errorStart1)
-    testMatcher(contentResult, "compiling your file", contentError) {
-      val errorStart2 = HtmlRepl.out.getBuffer.length
-      val assignmentResult = HtmlRepl.repl.interpret(assignment.testCode)
-      val assignmentError = HtmlRepl.out.getBuffer.substring(errorStart2)
-      testMatcher(assignmentResult, "compiling the assignment tests", assignmentError + " This could be an error on your teacher's part, or you may have failed to define a required function.") {
-        val errorStart3 = HtmlRepl.out.getBuffer.length
-        val testerResult = HtmlRepl.repl.interpret(HtmlRepl.webscalaTester)
-        val testerError = HtmlRepl.out.getBuffer.substring(errorStart3)
-        testMatcher(testerResult, "preparing the test results", testerError + "The class's teacher may not have set up the tests correctly.") {
-          val theTests = HtmlRepl.repl.valueOfTerm(HtmlRepl.repl.mostRecentVar)
-          if(HtmlRepl.isCorrectType(theTests)) renderTestResults(HtmlRepl.unwrapTests(theTests))
-          else renderTestResults(List(("Report this error to miller.james01@gmail.com", false)))
+  def runOwnTest: String = {
+    val setupResult = SafeCode.runCode {
+        val setupCode = 
+          """
+          import java.io._
+          import scala.Console
+          
+          val baos: ByteArrayOutputStream = new ByteArrayOutputStream()
+          """
+        HtmlRepl.repl.interpret(setupCode)
+    }
+    setupResult._1 match {
+      case IntpResults.Success => {
+        val printoutCode = 
+          """
+          Console.withOut(baos) {
+          """ +
+          "(new " + testName + ").execute()" +
+          """
+          }
+          
+          val output: String = new String(baos.toByteArray, "UTF-8")
+          """
+        HtmlRepl.repl.interpret(printoutCode) match {
+          case IntpResults.Success => {
+                HtmlRepl.repl.valueOfTerm("output").getOrElse("There was an error in retrieving your test results.").toString
+          }
+          case _ => "A problem occurred while running your tests. Check that the name of your test object is " + testName + "."
         }
       }
+      case _ => "WebScala messed up! Contact an administrator with the following error:\n" + setupResult._2
     }
   }
   
-  def testMatcher(result: IntpResults.Result, occurrence: String, additionalDiagnostic: String = "")
-  				 (successAction: scala.xml.Elem): scala.xml.Elem = {
-    result match {
-      case IntpResults.Success => successAction
-      case IntpResults.Incomplete => renderTestResults(List(("No errors, but the code used while " + occurrence + " was incomplete. Check your syntax.", false)))
-      case _ => renderTestResults(List(("The following error occurred while " + occurrence + ": " +
-    		  						    additionalDiagnostic, false)))	
-    }
-  } 
-  
-  def renderTestResults(results: List[(String, Boolean)]): scala.xml.Elem = {
-    results match {
-      case Nil => <div class="alert alert-info">No tests were run</div>
-      case results => {
-        <div id="result">
-    	  {for(result <- results) yield <div class={"alert " + {if(result._2) "alert-success" else "alert-error"}}>{result._1}</div>}
-    	</div>
-      }
-    }
+  def testResultsToHtml(results: String): scala.xml.Elem = {
+    val resultList = results.split("[0m")
+    <div></div>
   }
 }
   
