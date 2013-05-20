@@ -27,7 +27,6 @@ class Student extends User {
     email_=(email)
     setPassword(password)
     permissions_=(mutable.Set[Permission]())
-    root_=(new Directory("Home", this, Nil))
   }
   
   override def toString = username

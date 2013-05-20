@@ -27,7 +27,6 @@ class Teacher extends User {
     email_=(email)
     setPassword(password)
     permissions_=(mutable.Set[Permission]())
-    root_=(new Directory("Home", this, Nil))
   }
   
   def displayName = if(last == null) username else last.get

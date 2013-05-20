@@ -42,7 +42,8 @@ object WebScala extends Controller {
   def newFile(titles: String) = VisitAction { implicit req =>
     val titlesList = if(titles == "") Nil else titles.split("/").toList
     asUser { user => 
-      implicit val maybeItem = user.root.findItem(titlesList)
+      val root = Directory.getUserRoot(user)
+      implicit val maybeItem = root.findItem(titlesList)
       withDir { dir =>
         formHandle(form = NewFileForm(dir), title = "Add File") { vb =>
           val name = vb.valueOf(NewFileForm(dir).fileName).trim()
@@ -65,12 +66,17 @@ object WebScala extends Controller {
   }
   
   def fileManagerHome() = VisitAction { implicit req =>
-    asUser { user => Okay(views.html.webscala.displayFiles(user.root, "")) }
+    asUser { 
+      user => {
+        val root = Directory.getUserRoot(user)
+        Okay(views.html.webscala.displayFiles(root, "")) 
+      }
+    }
   }
   
  def fileManager(titles: String) = VisitAction { implicit req =>
     asUser { user =>
-      val directory = user.root
+      val directory = Directory.getUserRoot(user)
       val titlesList = titles.split("/").toList
       findFile(directory, titlesList)
     }
@@ -169,7 +175,8 @@ object WebScala extends Controller {
           else {
             b.addStudent(s)
             DataStore.pm.makePersistent(b)
-            s.root.addDirectory(new Directory(b.name, s, Nil))
+            val root = Directory.getUserRoot(s)
+            root.addDirectory(new Directory(b.name, s, Nil))
             DataStore.pm.makePersistent(s)
             Redirect(routes.WebScala.myBlocks).flashing(("success") -> ("You have been added to this class, and a class directory" 
                                                                          + " has been added to your home folder."))
@@ -242,7 +249,8 @@ object WebScala extends Controller {
        implicit val maybeAssign = b.assignments.find(_.title == assignment)
        withAssignment { a => 
          def starterCode = a.starterCode
-         implicit val maybeClassDir = u.root.content.find(_.title == block)
+         val root = Directory.getUserRoot(u)
+         implicit val maybeClassDir = root.content.find(_.title == block)
          withDir {d => 
            val alreadyAssigned = d.content.find(_.title == assignment)
            alreadyAssigned match {
@@ -264,7 +272,7 @@ object WebScala extends Controller {
       withBlock(Block.getByName(block)) { b => 
         implicit val maybeAssign = b.assignments.find(_.title == assignment)
         withAssignment { a =>
-          implicit val matchingFile = u.root.findItem(List(block, assignment))
+          implicit val matchingFile = Directory.getUserRoot(u).findItem(List(block, assignment))
           withFile { f => Okay(views.html.webscala.showTestResults(a, f)) }
         }
       }
@@ -278,7 +286,7 @@ object WebScala extends Controller {
       withBlock { b => 
         val maybeStudent = b.students.find(_.username == student)
         withObject(maybeStudent, "No such student exists.") { s =>
-          val classRoot = s.root.findItem(block)
+          val classRoot = Directory.getUserRoot(s).findItem(block)
           withDir(classRoot){ dir => findStudentFile(block, student, dir, Nil) }
         }
       }
@@ -291,7 +299,7 @@ object WebScala extends Controller {
       withBlock(blocks.find(_.name == block)) { b =>
         implicit val maybeStudent = b.students.find(_.username == student)
         withObject[Student]("Student with given name not in block.") { s =>
-          implicit val userRoot = s.root.findItem(block)
+          implicit val userRoot = Directory.getUserRoot(s).findItem(block)
           withDir { dir =>
             val path = titles.split("/").toList
             findStudentFile(block, student, dir, path)
@@ -308,7 +316,7 @@ object WebScala extends Controller {
       withBlock { b =>
         implicit val maybeStudent = b.students.find(_.username == student)
         withObject[Student]("Student with given name not in block.") { s =>
-          implicit val userRoot = s.root.findItem(block)
+          implicit val userRoot = Directory.getUserRoot(s).findItem(block)
           withDir { dir => 
             val path = titles.split("/").toList
             val maybeFile = dir.findItem(path)

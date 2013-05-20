@@ -21,7 +21,8 @@ object FileHandlers extends Controller {
    def fileIde(titles: String) = VisitAction { implicit req =>
     asUser { u => 
       val titleList = titles.split("/").toList
-      val matchingFile = u.root.findItem(titleList)
+      val root = Directory.getUserRoot(u)
+      val matchingFile = root.findItem(titleList)
       withFile(matchingFile) { f =>
         val result = SafeCode.runCode { HtmlRepl.repl.interpret(f.content) }
         Ok(views.html.webscala.ideSkeleton(f, result._2))
@@ -47,7 +48,8 @@ object FileHandlers extends Controller {
     req.visit.user match {
       case None => false
       case Some(user) => {
-        user.root.findItem(titles.split("/").toList) match {
+        val root = Directory.getUserRoot(user)
+        root.findItem(titles.split("/").toList) match {
           case None => println("Error in saving file.")
           case Some(_: Directory) => println("This is a directory. What happened?")
           case Some(f: File) => {
@@ -69,7 +71,8 @@ object FileHandlers extends Controller {
   	req.visit.user match {
       case None => false
       case Some(user) => {
-        user.root.findItem(titles.split("/").toList) match {
+        val root = Directory.getUserRoot(user)
+        root.findItem(titles.split("/").toList) match {
           case None => println("Error in saving file test.")
           case Some(_: Directory) => println("This is a directory. What happened?")
           case Some(f: File) => {
@@ -89,7 +92,8 @@ object FileHandlers extends Controller {
     req.visit.user match {
       case None => Redirect(routes.Application.index).flashing(("error" -> "You must be logged into test files"))
       case Some(user) => {
-        user.root.findItem(titles.split("/").toList) match {
+        val root = Directory.getUserRoot(user)
+        root.findItem(titles.split("/").toList) match {
           case None => Redirect(routes.Application.index).flashing(("error" -> "File not found."))
           case Some(_: Directory) => Redirect(routes.Application.index).flashing(("error" -> "This is a directory"))
           case Some(f: File) => {
