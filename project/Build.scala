@@ -20,12 +20,11 @@ object ApplicationBuild extends Build {
 
     "com.h2database" % "h2" % "1.3.166",
     "javax.jdo" % "jdo-api" % "3.0",
-    "org.datanucleus" % "datanucleus-core" % "3.1.4",
-    "org.datanucleus" % "datanucleus-api-jdo" % "3.1.3",
+    "org.datanucleus" % "datanucleus-core" % "3.2.3",
+    "org.datanucleus" % "datanucleus-api-jdo" % "3.2.2",
     "org.datanucleus" % "datanucleus-enhancer" % "3.1.1",
     "org.datanucleus" % "datanucleus-jdo-query" % "3.0.2",
-    "org.datanucleus" % "datanucleus-rdbms" % "3.1.4",
-    "org.datanucleus" % "datanucleus-jodatime" % "3.1.1"
+    "org.datanucleus" % "datanucleus-rdbms" % "3.2.2",
 
   )
 
@@ -38,13 +37,8 @@ object ApplicationBuild extends Build {
      (scalacOptions ++= Seq("-deprecation", "-feature")) +:
       Nucleus.settings): _*
     
-  ) dependsOn RootProject( uri("git://github.com/toddobryan/image.git") )
-/*    val main = PlayProject(appName, appVersion, appDependencies, mainLang = SCALA).settings(
-      ((resolvers += "t2v.jp repo" at "http://www.t2v.jp/maven-repo/") +:
-       (testOptions in Test := Nil) +: 
-       Nucleus.settings): _*
-    )
-*/
+  ) dependsOn RootProject( uri("git://github.com/toddobryan/image.git")
+  ) dependsOn RootProject( uri("git://github.com/toddobryan/scalajdo.git"))
 }
 
 object Nucleus {
