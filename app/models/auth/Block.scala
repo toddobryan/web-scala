@@ -26,13 +26,6 @@ class Block {
   def teacher: Teacher = _teacher
   def teacher_=(theTeacher: Teacher) {_teacher = theTeacher}
   
-  private[this] var _assignments: java.util.Set[Assignment] = _
-  def assignments: List[Assignment] = _assignments.asScala.toList
-  def assignments_=(theAssignments: List[Assignment]) = {
-    val mutableAssignments = mutable.Set(theAssignments.toList:_*)
-    _assignments = mutableAssignments.asJava
-  }
-  
   private[this] var _students: java.util.Set[Student] = _
   def students: List[Student] = _students.asScala.toList
   def students_=(theStudents: List[Student]) = {
@@ -42,17 +35,14 @@ class Block {
   
   private[this] var _allBlocks = true
   
-  def this(name: String, teacher: Teacher, assignments: List[Assignment] = Nil, students: List[Student] = Nil) = {
+  def this(name: String, teacher: Teacher, students: List[Student] = Nil) = {
     this()
     name_=(name)
     teacher_=(teacher)
-    assignments_=(assignments)
     students_=(students)
   }
   
   def addStudent(s: Student) = students_=(s :: students)
-  
-  def addAssignemnt(a: Assignment) = assignments_=(a :: assignments)
 
   def asHtmlTeacher: scala.xml.Elem = {
     <tr><td><a href={"/myClasses/"+name}>{name}</a></td></tr>

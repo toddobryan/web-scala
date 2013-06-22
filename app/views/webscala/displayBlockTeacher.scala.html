@@ -6,7 +6,7 @@
 	<p>Give your students this id to join the class: @block.id </p>
 	</div>
 	<h2>Assignments</h2>
-	@assignmentsList(block, block.assignments)
+	@assignmentsList(block, models.files.Assignment.getBlockAssignments(block))
 	<h2>Students</h2>
 	@studentList(block, block.students)
 }

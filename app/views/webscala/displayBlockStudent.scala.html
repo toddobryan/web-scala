@@ -3,5 +3,5 @@
 @main(block.name + " Page") {
 	<h1>@block.name</h1>
 	<h2>Assignments</h2>
-	@assignmentsListStartCode(block, block.assignments)
+	@assignmentsListStartCode(block,  models.files.Assignment.getBlockAssignments(block))
 }

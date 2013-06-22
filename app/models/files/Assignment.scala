@@ -10,11 +10,13 @@ import models.auth.{Block, QBlock}
 
 @PersistenceCapable(detachable="true")
 class Assignment {
-  def this(title: String, starterCode: String, testCode: String) {
+  def this(title: String, block: Block, starterCode: String, testCode: String, offTestCode: String) {
     this()
     title_=(title)
+    block_=(block)
     starterCode_=(starterCode)
     testCode_=(testCode)
+    offTestCode_=(offTestCode)
   }
 
   @PrimaryKey
@@ -35,9 +37,23 @@ class Assignment {
   private[this] var _testCode: String = _
   def testCode: String = _testCode
   def testCode_=(theTest: String) = {_testCode = theTest}
+  
+  @Column(length=1048576) // 1MB
+  private[this] var _offTestCode: String = _
+  def offTestCode: String = _offTestCode
+  def offTestCode_=(theOffTest: String) = {_offTestCode = theOffTest}
+  
+  @Persistent(defaultFetchGroup= "true")
+  private[this] var _block: Block = _
+  def block: Block = _block
+  def block_=(theBlock: Block) = {_block = theBlock}
 }
 
 object Assignment {
+  def getBlockAssignments(block: Block): List[Assignment] = {
+    val cand = QAssignment.candidate
+    DataStore.pm.query[Assignment].filter(cand.block.eq(block)).executeList
+  }
 }
 
 trait QAssignment extends PersistableExpression[Assignment] {
@@ -52,6 +68,9 @@ trait QAssignment extends PersistableExpression[Assignment] {
   
   private[this] lazy val _testCode: StringExpression = new StringExpressionImpl(this, "_testCode")
   def testCode: StringExpression = _testCode
+  
+  private[this] lazy val _block: ObjectExpression[Block] = new ObjectExpressionImpl(this, "_block")
+  def block: ObjectExpression[Block] = _block
 }
 
 object QAssignment {

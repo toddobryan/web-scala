@@ -24,7 +24,7 @@ object ApplicationBuild extends Build {
     "org.datanucleus" % "datanucleus-api-jdo" % "3.2.2",
     "org.datanucleus" % "datanucleus-enhancer" % "3.1.1",
     "org.datanucleus" % "datanucleus-jdo-query" % "3.0.2",
-    "org.datanucleus" % "datanucleus-rdbms" % "3.2.2",
+    "org.datanucleus" % "datanucleus-rdbms" % "3.2.2"
 
   )
 

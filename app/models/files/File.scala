@@ -61,7 +61,7 @@ class File extends Item {
     _title = title
     _owner = owner
     _content = content
-    _tests = defaultTestCode(title)
+    _tests = File.defaultTestCode(title)
     lastModified match {
       case None => _lastModified = null
       case Some(date) => lastModified_=(date)
@@ -89,29 +89,7 @@ class File extends Item {
     "%s -- %s".format(title, owner)
   }
   
-  def testName: String = objectName(title) + "Test"
-  
-  def objectName(s: String): String = {
-    s.split(" ").map(capitalize(_)).mkString("")
-  }
-  
-  def capitalize(s: String) = {
-     s.replaceFirst(s.substring(0,1), s.substring(0,1).toUpperCase)
-  }
-  
-  def defaultTestCode(s: String): java.lang.String = {
-"""import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
-
-// Do not change the name of this test object, please!
-class """ + objectName(s) + "Test" + """ extends FunSuite with ShouldMatchers {
-  test("sample") {
-    val x = 2 + 2
-	x should be === (4)
-  }
-}
-"""
-}
+  def testName: String = File.objectName(title) + "Test"
   
   def recentSort(file: File): Boolean = {
     lastModified match {
@@ -187,7 +165,9 @@ class """ + objectName(s) + "Test" + """ extends FunSuite with ShouldMatchers {
             Block.getByStudent(s).find(_.name == pathList.head)
           }
       }
-      maybeBlock.getOrElse(new Block("", new Teacher(""), Nil, Nil)).assignments.exists(_.title == title)
+      Assignment.getBlockAssignments(
+          maybeBlock.getOrElse(new Block("", new Teacher(""), Nil))
+      ).exists(_.title == title)
     }
   }
   
@@ -244,6 +224,28 @@ object File {
 	
 	def mostRecentFour(owner: User): List[File] = {
 	  getByOwner(owner).sortWith(_ recentSort _).take(4)
+	}
+	
+	def defaultTestCode(s: String): java.lang.String = {
+"""import org.scalatest.FunSuite
+import org.scalatest.matchers.ShouldMatchers
+
+// Do not change the name of this test object, please!
+class """ + objectName(s) + "Test" + """ extends FunSuite with ShouldMatchers {
+  test("sample") {
+    val x = 2 + 2
+	x should be === (4)
+  }
+}
+"""
+	}
+	
+	def objectName(s: String): String = {
+	  s.split(" ").map(capitalize(_)).mkString("")
+    }
+	
+	def capitalize(s: String) = {
+      s.replaceFirst(s.substring(0,1), s.substring(0,1).toUpperCase)
 	}
 }
 
