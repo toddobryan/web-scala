@@ -60,11 +60,9 @@ object FileMgmt extends Controller {
   }
   
   def fileManagerHome() = VisitAction { implicit req =>
-    asUser { 
-      user => {
-        val root = Directory.getUserRoot(user)
-        Okay(views.html.webscala.displayFiles(root, "")) 
-      }
+    asUser { user => 
+      val root = Directory.getUserRoot(user)
+      Okay(views.html.webscala.displayFiles(root, "")) 
     }
   }
   

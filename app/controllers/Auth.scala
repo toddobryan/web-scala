@@ -56,7 +56,7 @@ object NewUserForm extends Form {
 object Auth extends Controller {
   def login() = VisitAction { implicit req => 
     if (req.method == Method.GET) {
-      Okay(views.html.auth.login(Binding(LoginForm)))
+      Ok(views.html.auth.login(Binding(LoginForm)))
     } else {
       Binding(LoginForm, req) match {
         case ib: InvalidBinding => Ok(views.html.auth.login(ib))

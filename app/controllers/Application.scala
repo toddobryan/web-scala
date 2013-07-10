@@ -8,7 +8,7 @@ import util.ControllerHelpers._
 object Application extends Controller {
   
   def index = VisitAction { implicit req =>
-    Okay(views.html.index("Your new application is ready."))
+    Okay(views.html.index(req.request.remoteAddress))
   }
   
 }

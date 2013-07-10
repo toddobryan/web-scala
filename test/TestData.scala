@@ -8,14 +8,18 @@ object TestData {
   val user3: User = new User("cjin14", "Choong Won", "Jin")
   val users = List(user1, user2, user3)
 
-  val assignment: Assignment = new Assignment("Basic Scala", "val x = 0",
+  val assignment: Assignment = new Assignment("Basic Scala", r4, "val x = 0",
+      """
+      val test1 = x == 4
+      val myTests = List(("Val of x", test1, ""))
+      """,
       """
       val test1 = x == 4
       val myTests = List(("Val of x", test1, ""))
       """)
   
    val r4: Block = (user1, user2) match {
-    case (t: Teacher, s: Student) => new Block("R4", t, List(assignment), List(s))
+    case (t: Teacher, s: Student) => new Block("R4", t, List(s))
   }
   
   def load() {

@@ -15,6 +15,7 @@ import org.joda.time._
 import forms._
 import forms.fields._
 import forms.validators._
+import util.QuickRedirects._
 
 
 object ControllerHelpers extends Controller {
@@ -34,16 +35,6 @@ object ControllerHelpers extends Controller {
     }
   }
   
-  // Redirects to the login page
-  def loginError(message: String)(implicit req: VRequest): PlainResult = {
-    Redirect(routes.Application.index()).flashing(("error" -> message))
-  }
-  
-  // Redirects to the last redirect page, with a custom flashing message
-  def error(message: String)(implicit req: VRequest): PlainResult = {
-    Redirect(req.visit.redirectUrl.getOrElse(routes.Application.index.url)).flashing(("error" -> message))
-  } 
-  
   /* These methods are to eliminate the endless indenting that
    * comes with pattern matching of the visit user to
    * a student or a teacher, and also to reduce redundancy of 
@@ -52,10 +43,9 @@ object ControllerHelpers extends Controller {
   
   // Requires there to be an active user; redirects to error if there isn't
   def asUser(ufun: ToResult[User])(implicit req: VRequest): PlainResult = {
-    val errMes = "You must be logged in as a user for this request."
     req.visit.user match {
       case Some(u) => ufun(u)
-      case None => loginError(errMes)
+      case None => UserRedirect()
     }
   }
   
@@ -66,18 +56,18 @@ object ControllerHelpers extends Controller {
     val errMes = "You are neither a student or teacher. Contact a system administrator."
     asUser { _ match { case t: Teacher => tfun(t) 
     				   case s: Student => sfun(s)
-    				   case _ => error(errMes) } }
+    				   case _ => Error(errMes) } }
   }
   
   // Redirects if a teacher is not logged in
   def asTeacher(tfun: ToResult[Teacher])(implicit req: VRequest): PlainResult = {
-    val sfun: ToResult[Student] = s => error("You must be logged in as a teacher for this request.")
+    val sfun: ToResult[Student] = s => Error("You must be logged in as a teacher for this request.")
     teacherOrStudent(tfun)(sfun)
   }
   
   // Redirects if a student is not logged in
   def asStudent(sfun: ToResult[Student])(implicit req: VRequest): PlainResult = {
-    val tfun: ToResult[Teacher] = t => error("You must be logged in as a student for this request.")
+    val tfun: ToResult[Teacher] = t => Error("You must be logged in as a student for this request.")
     teacherOrStudent(tfun)(sfun)
   }
   
@@ -105,7 +95,7 @@ object ControllerHelpers extends Controller {
   // Template for matching items and blocks from the database.
   def withObject[T](maybeObj: Option[T], errMes: String)
   				   (objfun: ToResult[T])(implicit req: VRequest): PlainResult = {
-    maybeObj match { case Some(o) => objfun(o); case None => error(errMes) }
+    maybeObj match { case Some(o) => objfun(o); case None => Error(errMes) }
   }
   
   // withObject
@@ -131,13 +121,13 @@ object ControllerHelpers extends Controller {
     withItem(maybeItem) {
       _ match {case d: Directory => dfun(d)
                case f: File => ffun(f)
-               case _ => error("This item was neither a directory or file.")}
+               case _ => Error("This item was neither a directory or file.")}
     }
   }
   
   // Pattern matches an Option[Item], and redirects if the item is not a directory.
   def withDir(maybeItem: Option[Item])(dfun: ToResult[Directory])(implicit req: VRequest): PlainResult = {
-    val ffun: ToResult[File] = f => error("A directory is required for this action. A file was found.")
+    val ffun: ToResult[File] = f => Error("A directory is required for this action. A file was found.")
     dirOrFile(maybeItem)(dfun)(ffun)
   }
   
@@ -147,7 +137,7 @@ object ControllerHelpers extends Controller {
   
   // Pattern matches an Option[Item], and redirects if the item is not a file.
   def withFile(maybeItem: Option[Item])(ffun: ToResult[File])(implicit req: VRequest): PlainResult = {
-    val dfun: ToResult[Directory] = d => error("A file is required for this action. A directory was found.")
+    val dfun: ToResult[Directory] = d => Error("A file is required for this action. A directory was found.")
     dirOrFile(maybeItem)(dfun)(ffun)
   }
   

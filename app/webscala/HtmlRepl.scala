@@ -17,20 +17,32 @@ import scala.tools.nsc.interpreter.IR.{ Result => IntpResult}
 import org.dupontmanual.image.{ Bitmap, Image }
 
 class HtmlRepl {
+  lazy val out = new StringWriter()
   
+  val repl = {
+    val settings = new Settings
+    settings.embeddedDefaults(new ReplClassLoader(settings.getClass().getClassLoader()))
+    val theRepl = new IMain(settings, new PrintWriter(out)) {
+      override protected def parentClassLoader: ClassLoader = this.getClass.getClassLoader()
+    }
+    theRepl.addImports("scala.language.ImplicitConversions")
+    theRepl.addImports("org.dupontmanual.image._")
+    theRepl
+  }
 }
 
 object SafeCode {
   
   def runCode(code: => IntpResult): (IntpResult, String) = {
-    val start = HtmlRepl.out.getBuffer.length
+    val htmlRepl = new HtmlRepl()
+    val start = htmlRepl.out.getBuffer.length
     val res = future { code }
     try {
       val eventualResult = Await.result(res, 10000 millis)
       eventualResult match {
         case IntpResults.Success => (IntpResults.Success, "No errors!")
         case IntpResults.Incomplete => (IntpResults.Incomplete, "Your code was not complete. Check near the end.")
-        case IntpResults.Error => (IntpResults.Error, "The following error occurred:\n" + HtmlRepl.out.getBuffer.substring(start))
+        case IntpResults.Error => (IntpResults.Error, "The following error occurred:\n" + htmlRepl.out.getBuffer.substring(start))
       }
     } catch {
       case to: java.util.concurrent.TimeoutException => (IntpResults.Error, "Timeout Exception. Check for infinite loops.")
@@ -54,19 +66,6 @@ object HtmlRepl {
   }
     
    webscalaTester(myTests)"""
-  }
-  
-  lazy val out = new StringWriter()
-  
-  val repl = {
-    val settings = new Settings
-    settings.embeddedDefaults(new ReplClassLoader(settings.getClass().getClassLoader()))
-    val theRepl = new IMain(settings, new PrintWriter(out)) {
-      override protected def parentClassLoader: ClassLoader = this.getClass.getClassLoader()
-    }
-    theRepl.addImports("scala.language.ImplicitConversions")
-    theRepl.addImports("org.dupontmanual.image._")
-    theRepl
   }
   
   def resultToHtml(res: Option[AnyRef]): String = res match {

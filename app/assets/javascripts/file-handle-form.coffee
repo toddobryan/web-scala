@@ -6,7 +6,6 @@ goToInteractions = (editor) ->
 save = (editor, testEditor) ->
 	code = editor.getValue()
 	testCode = testEditor.getValue()
-	alert(testCode)
 	filePath = $('#info').attr('path')
 	$.post('/save/' + filePath, $.param({content : code, test : testCode}), (result) -> 
 		$('#message').css('display', 'block')

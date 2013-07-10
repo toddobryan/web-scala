@@ -7,6 +7,7 @@
     @for(item <- directory.sortedContent) {
       @item.asHtmlFO(currPath)
     }
+    <li><a href="@{"/newFile/" + currPath}" class="btn">Add a file or directory to this directory!</a></li>
   </ul>
-  <a href="@{"/newFile/" + currPath}" class="btn">Add a file or directory to this directory!</a>
+  
 }

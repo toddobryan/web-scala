@@ -158,8 +158,7 @@ class File extends Item {
     val pathList = currPath.split("/").toList
     if(pathList.length > 2) false
     else {
-      val maybeBlock = 
-        owner match {
+      val maybeBlock = owner match {
           case t: Teacher => Block.getByTeacher(t).find(_.name == pathList.head)
           case s: Student => {
             Block.getByStudent(s).find(_.name == pathList.head)
@@ -180,7 +179,7 @@ class File extends Item {
           
           val baos: ByteArrayOutputStream = new ByteArrayOutputStream()
           """
-        HtmlRepl.repl.interpret(setupCode)
+        (new HtmlRepl).repl.interpret(setupCode)
     }
     setupResult._1 match {
       case IntpResults.Success => {
@@ -194,9 +193,12 @@ class File extends Item {
           
           val output: String = new String(baos.toByteArray, "UTF-8")
           """
-        HtmlRepl.repl.interpret(printoutCode) match {
+        (new HtmlRepl).repl.interpret(printoutCode) match {
           case IntpResults.Success => {
-                HtmlRepl.repl.valueOfTerm("output").getOrElse("There was an error in retrieving your test results.").toString
+                (new HtmlRepl).repl.valueOfTerm("output") match {
+                  case Some(x) => testResultsToHtmlString(x.toString)
+                  case _ => "There was an error in retrieving your test results."
+                }
           }
           case _ => "A problem occurred while running your tests. Check that the name of your test object is " + testName + "."
         }
@@ -205,9 +207,15 @@ class File extends Item {
     }
   }
   
-  def testResultsToHtml(results: String): scala.xml.Elem = {
-    val resultList = results.split("[0m")
-    <div></div>
+  def testResultsToHtmlString(results: String): String = {
+    val resultList = results.split("\\[0m").toList
+    def resultProcessor(res: String): String = {
+      if(res.contains("[32m")) "<div class=\"success-result\">" + res.substring(4) + "</div>"
+      if(res.contains("[33m")) "<div class=\"warning-result\">" + res.substring(4) + "</div>"
+      if(res.contains("[31m")) "<div class=\"failure-result\">" + res.substring(4) + "</div>"
+      else "<span>" + res.length + "</span>" + "<span>" + res + "</span>"
+    }
+    {for(result <- resultList) yield resultProcessor(result)}.mkString("<br \\>")
   }
 }
   
