@@ -1,8 +1,8 @@
 package actors
 
 import scala.tools.nsc.interpreter.{ Results => IntpResults }
-import controllers.routes
 import scala.tools.nsc.interpreter.IR.{ Result => IntpResult}
+import controllers.routes
 import play.api._
 import play.api.mvc._
 import webscala._ 
@@ -17,8 +17,7 @@ import forms.fields._
 import forms.validators._
 import util.QuickRedirects._
 import akka.actor._
-import akka.actor.OneForOneStrategy
-import akka.actor.SupervisorStrategy._
+import akka.actor.SupervisorStrategy
 import akka.pattern.ask
 import scala.concurrent._
 import scala.concurrent.duration._
@@ -38,10 +37,7 @@ class CodeDirector(val id: String) extends Actor {
     case _ => println("Message received.")
   }
   
-  override val supervisorStrategy = 
-    OneForOneStrategy(maxNrOfRetries = 3, withinTimeRange = 1 minute) {
-      case _ => Stop
-  	}
+  override val supervisorStrategy = SupervisorStrategy.stoppingStrategy
   
   implicit val timeout = Timeout(15 seconds)
   
