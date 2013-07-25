@@ -10,9 +10,9 @@ object ApplicationBuild extends Build {
   val appDependencies = Seq(
     // Add your project dependencies here,
     jdbc,
-    "org.scala-lang" % "scala-compiler" % "2.10.1",
-    "org.scala-lang" % "scala-swing" % "2.10.1",
-    "org.scala-lang" % "scala-actors" % "2.10.1",
+    "org.scala-lang" % "scala-compiler" % "2.10.2",
+    "org.scala-lang" % "scala-swing" % "2.10.2",
+    "org.scala-lang" % "scala-actors" % "2.10.2",
     "org.scalatest" % "scalatest_2.10" % "2.0.M5b" % "test",
     "commons-codec" % "commons-codec" % "1.6",
     "javax.mail" % "mail" % "1.4.5",
@@ -31,16 +31,17 @@ object ApplicationBuild extends Build {
     "com.typesafe.akka" %% "akka-remote" % "2.1.0"
   )
 
+  val mySettings = Seq(
+    scalaVersion := "2.10.2",
+    javacOptions ++= Seq("-source", "1.6", "-target", "1.6", "-bootclasspath", "/usr/lib/jvm/java-6-oracle/jre/lib/rt.jar"),
+    scalacOptions ++= Seq("-deprecation", "-feature"),
+    resolvers ++= Seq("Sonatype Public" at "https://oss.sonatype.org/content/groups/public/",
+                      "Java.net" at "http://download.java.net/maven/2/")
+  )
 
   val main = play.Project(appName, appVersion, appDependencies).settings(
     // Add your own project settings here
-    ((scalaVersion := "2.10.1") +:
-     (resolvers += "Sonatype Public" at "https://oss.sonatype.org/content/groups/public/") +:
-     (resolvers += "Java.net" at "http://download.java.net/maven/2/") +:
-     (scalacOptions ++= Seq("-deprecation", "-feature")) +:
-      Nucleus.settings): _*
-    
-  ) dependsOn RootProject( uri("git://github.com/toddobryan/image.git")
+    (mySettings ++ Nucleus.settings): _*) dependsOn RootProject( uri("git://github.com/toddobryan/image.git")
   ) dependsOn RootProject( uri("git://github.com/toddobryan/scalajdo.git"))
 }
 
