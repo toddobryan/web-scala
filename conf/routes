@@ -7,10 +7,10 @@ GET     /                           controllers.Application.index
 
 # Auth
 GET     /login                      controllers.Auth.login
-POST    /login                      controllers.Auth.login
+POST    /login                      controllers.Auth.loginP
 GET     /logout                     controllers.Auth.logout
 GET     /createAccount				controllers.Auth.newUser
-POST	/createAccount				controllers.Auth.newUser
+POST	/createAccount   			controllers.Auth.newUserP
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
@@ -18,35 +18,31 @@ GET     /assets/*file               controllers.Assets.at(path="/public", file)
 GET     /ide                        controllers.WebScala.ide
 GET		/ide/*titles				controllers.FileHandlers.fileIde(titles: String)
 POST    /interpret                  controllers.FileHandlers.interpret
-GET     /compile/*titles            controllers.FileHandlers.compile(titles: String)
 POST    /compile/*titles            controllers.FileHandlers.compile(titles: String)
 POST    /save/*titles				controllers.FileHandlers.save(titles: String)
 GET		/test/*titles				controllers.FileHandlers.test(titles: String)
 
-# Files
+# FileMgmt
 GET     /newFile/*titles				controllers.FileMgmt.newFile(titles: String)
-POST    /newFile/*titles			    controllers.FileMgmt.newFile(titles: String)
+POST    /newFile/*titles			    controllers.FileMgmt.newFileP(titles: String)
 GET     /newFile                        controllers.FileMgmt.newFileHome()
-POST    /newFile                        controllers.FileMgmt.newFileHome()
-GET     /newFile/                       controllers.FileMgmt.newFileHome()
-POST    /newFile/                       controllers.FileMgmt.newFileHome()
+POST    /newFile                        controllers.FileMgmt.newFileHomeP()
 GET     /fileManager/*titles			controllers.FileMgmt.fileManager(titles: String)
-GET     /fileManager					controllers.FileMgmt.fileManagerHome()
 GET     /fileManager					controllers.FileMgmt.fileManagerHome()
 GET     /submitFile/:block/:assignment  controllers.FileMgmt.submitFile(block: String, assignment: String)
 
 # Blocks
 GET     /newClass             	      					controllers.Classes.newBlock
-POST    /newClass                	 					controllers.Classes.newBlock
+POST    /newClass                	 					controllers.Classes.newBlockP
 GET     /myClasses					 					controllers.Classes.myBlocks
 GET     /myClasses/:block     	       					controllers.Classes.findMyBlock(block: String)
 GET     /myClasses/:block/newAssignment					controllers.Assignments.newAssignment(block: String)
-POST    /myClasses/:block/newAssignment					controllers.Assignments.newAssignment(block: String)
+POST    /myClasses/:block/newAssignment					controllers.Assignments.newAssignmentP(block: String)
 GET     /myClasses/:block/editAssignment/:assignment 	controllers.Assignments.editAssignment(block: String, assignment: String)
-POST    /myClasses/:block/editAssignment/:assignment 	controllers.Assignments.editAssignment(block: String, assignment: String)
+POST    /myClasses/:block/editAssignment/:assignment 	controllers.Assignments.editAssignmentP(block: String, assignment: String)
 GET     /myClasses/:block/:student						controllers.Assignments.getStudentFiles(block: String, student: String, titles = "")
 GET     /myClasses/:block/:student/testCode/*titles	 	controllers.Assignments.getStudentAssignmentTest(block: String, student: String, titles: String)
 GET     /myClasses/:block/:student/*titles				controllers.Assignments.getStudentFiles(block: String, student: String, titles: String)
 GET     /joinClass										controllers.Classes.joinBlock
-POST    /joinClass										controllers.Classes.joinBlock
+POST    /joinClass										controllers.Classes.joinBlockP
 POST    /starterCode/:block/:assignment                 controllers.Assignments.startAssignment(block: String, assignment: String)

@@ -32,16 +32,21 @@ object Classes extends Controller {
     }
   }
   
-  def newBlock() = VisitAction {implicit req =>
-    asTeacher { t => 
-      formHandle( form = NewBlockForm, title = "Add Block") { 
-        vb =>
-        val blockName = vb.valueOf(NewBlockForm.blockName).trim
-        val newBlock = new Block(blockName, t)
-        DataStore.pm.makePersistent(newBlock)
-        Redirect(routes.Classes.myBlocks()).flashing(("success" -> "New Class Created"))
-      }
-    }
+  def newBlockActions(t: Teacher)(implicit req: VRequest) = 
+    formHandle(form = NewBlockForm, title= "Add Block") {
+    vb: ValidBinding => 
+      val blockName = vb.valueOf(NewBlockForm.blockName).trim
+      val newBlock = new Block(blockName, t)
+      DataStore.pm.makePersistent(newBlock)
+      Redirect(routes.Classes.myBlocks()).flashing(("success" -> "New Class Created"))
+  }
+  
+  def newBlock() = VisitAction { implicit req =>
+    asTeacher { t => newBlockActions(t)._1 }
+  }
+  
+  def newBlockP() = VisitAction { implicit req =>
+    asTeacher { t => newBlockActions(t)._2 }
   }
   
   def myBlocks() = VisitAction { implicit req =>
@@ -84,23 +89,29 @@ object Classes extends Controller {
     }
   }
   
-  def joinBlock() = VisitAction { implicit req =>
-    asStudent { s => 
-      formHandle( form = JoinBlockForm, title = "Join Block") { vb => 
-        implicit val maybeBlock = Block.getByName(vb.valueOf(JoinBlockForm.blockName)) 
+  def joinBlockActions(s: Student)(implicit req: VRequest) = 
+    formHandle( form = JoinBlockForm, title = "Join Block") {
+      vb: ValidBinding =>
+        implicit val maybeBlock = Block.getByName(vb.valueOf(JoinBlockForm.blockName))
         withBlock { b =>
-          if(b.students.contains(s))  Redirect(routes.Classes.joinBlock()).flashing(("error") -> "You are already a member of this class.")
-          else {
-            b.addStudent(s)
-            DataStore.pm.makePersistent(b)
-            val root = Directory.getUserRoot(s)
-            root.addDirectory(new Directory(b.name, s, Nil))
-            DataStore.pm.makePersistent(s)
-            Redirect(routes.Classes.myBlocks).flashing(("success") -> ("You have been added to this class, and a class directory" 
-                                                                         + " has been added to your home folder."))
-          }
-        }
+        if(b.students.contains(s))  Redirect(routes.Classes.joinBlock()).flashing(("error") -> "You are already a member of this class.")
+        else {
+          b.addStudent(s)
+          DataStore.pm.makePersistent(b)
+          val root = Directory.getUserRoot(s)
+          root.addDirectory(new Directory(b.name, s, Nil))
+          DataStore.pm.makePersistent(s)
+          Redirect(routes.Classes.myBlocks).flashing(("success") -> ("You have been added to this class, and a class directory" 
+                                                                       + " has been added to your home folder."))
       }
     }
+  }
+  
+  def joinBlock() = VisitAction { implicit req =>
+    asStudent { s => joinBlockActions(s)._1 }
+  }
+  
+  def joinBlockP() = VisitAction { implicit req =>
+    asStudent { s => joinBlockActions(s)._2}
   }
 }

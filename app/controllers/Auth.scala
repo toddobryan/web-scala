@@ -55,19 +55,19 @@ object NewUserForm extends Form {
 
 object Auth extends Controller {
   def login() = VisitAction { implicit req => 
-    if (req.method == Method.GET) {
-      Ok(views.html.auth.login(Binding(LoginForm)))
-    } else {
-      Binding(LoginForm, req) match {
-        case ib: InvalidBinding => Ok(views.html.auth.login(ib))
-        case vb: ValidBinding => {
-          // set the session user
-          req.visit.user = User.getByUsername(vb.valueOf(LoginForm.username))
-          val redirectUrl: Option[String] = req.visit.redirectUrl
-          req.visit.redirectUrl = None
-          DataStore.pm.makePersistent(req.visit)
-          redirectUrl.map(Redirect(_)).getOrElse(Redirect(routes.Application.index())).flashing("success" -> "You have successfully logged in.")
-        }
+    Ok(views.html.auth.login(Binding(LoginForm))) 
+  }
+  
+  def loginP = VisitAction { implicit req =>
+    Binding(LoginForm, req) match {
+      case ib: InvalidBinding => Ok(views.html.auth.login(ib))
+      case vb: ValidBinding => {
+        // set the session user
+        req.visit.user = User.getByUsername(vb.valueOf(LoginForm.username))
+        val redirectUrl: Option[String] = req.visit.redirectUrl
+        req.visit.redirectUrl = None
+        DataStore.pm.makePersistent(req.visit)
+        redirectUrl.map(Redirect(_)).getOrElse(Redirect(routes.Application.index())).flashing("success" -> "You have successfully logged in.")
       }
     }
   }
@@ -80,22 +80,25 @@ object Auth extends Controller {
   def newUser = VisitAction { implicit req =>
   	req.visit.user match {
   	  case Some(_) => Redirect(routes.Application.index()).flashing("error" -> "You are already logged in!")
+  	  case None => Okay(views.html.auth.newUserForm(Binding(NewUserForm)))
+  	}
+  }
+  
+  def newUserP = VisitAction { implicit req =>
+    req.visit.user match {
+  	  case Some(_) => Redirect(routes.Application.index()).flashing("error" -> "You are already logged in!")
   	  case None => {
-  	    if(req.method == Method.GET) {
-  	      Okay(views.html.auth.newUserForm(Binding(NewUserForm)))
-  	    } else {
-  	      Binding(NewUserForm, req) match {
-  	        case ib: InvalidBinding => Ok(views.html.auth.newUserForm(ib))
-  	        case vb: ValidBinding => {
-  	          val info = Map("username" -> vb.valueOf(NewUserForm.username), "password" -> vb.valueOf(NewUserForm.password), 
-  	        		  		 "first" -> vb.valueOf(NewUserForm.firstName), "last" -> vb.valueOf(NewUserForm.lastName))
-  	          val user: User = new Student(info("username"), first = info("first"), last = info("last"), password = info("password"))
-  	          DataStore.pm.makePersistent(user)
-  	          Redirect(routes.Auth.login()).flashing("success" -> "Account created successfully! Now log in.")
-  	        }
+  	    Binding(NewUserForm, req) match {
+  	      case ib: InvalidBinding => Ok(views.html.auth.newUserForm(ib))
+  	      case vb: ValidBinding => {
+  	        val info = Map("username" -> vb.valueOf(NewUserForm.username), "password" -> vb.valueOf(NewUserForm.password), 
+  	       		  		 "first" -> vb.valueOf(NewUserForm.firstName), "last" -> vb.valueOf(NewUserForm.lastName))
+  	        val user: User = new Student(info("username"), first = info("first"), last = info("last"), password = info("password"))
+  	        DataStore.pm.makePersistent(user)
+  	        Redirect(routes.Auth.login()).flashing("success" -> "Account created successfully! Now log in.")
   	      }
   	    }
   	  }
-  	}
+    }
   }
 }

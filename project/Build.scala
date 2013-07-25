@@ -26,7 +26,9 @@ object ApplicationBuild extends Build {
     "org.datanucleus" % "datanucleus-jdo-query" % "3.0.2",
     "org.datanucleus" % "datanucleus-rdbms" % "3.2.2",
     
-    "com.typesafe.akka" %% "akka-actor" % "2.2.0"
+    "com.typesafe" % "config" % "1.0.2",
+    "com.typesafe.akka" %% "akka-actor" % "2.2.0",
+    "com.typesafe.akka" %% "akka-remote" % "2.1.0"
   )
 
 

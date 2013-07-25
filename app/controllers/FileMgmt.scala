@@ -31,7 +31,30 @@ object FileMgmt extends Controller {
     }
   }
   
-  def newFileHome() = newFile("")
+  def newFileHome = newFile("")
+  
+  def newFileHomeP = newFile("")
+  
+  def newFileActions(user: User, titles: String, dir: Directory)(implicit req: VRequest):(PlainResult, PlainResult) = { 
+    formHandle(form = NewFileForm(dir), title = "Add File") {
+      vb: ValidBinding => {
+        val name = vb.valueOf(NewFileForm(dir).fileName).trim()
+        val dirOrFile = vb.valueOf(NewFileForm(dir).dirOrFile)
+        if(dirOrFile == "dir") {
+          val newDir = new Directory(name, user, Nil, 2)
+          dir.addDirectory(newDir)
+        } else {
+          val file = new File(name, user, "/* Insert Code Here */", Some(DateTime.now))
+          dir.addFile(file)
+        }
+        if(titles == "") {
+          Redirect("/fileManager").flashing(("success" -> "Item Created"))
+        } else {
+          Redirect("/fileManager/" + titles).flashing(("success" -> "Item Created"))
+        }
+      }
+    }
+  }
   
   def newFile(titles: String) = VisitAction { implicit req =>
     val titlesList = if(titles == "") Nil else titles.split("/").toList
@@ -39,22 +62,18 @@ object FileMgmt extends Controller {
       val root = Directory.getUserRoot(user)
       implicit val maybeItem = root.findItem(titlesList)
       withDir { dir =>
-        formHandle(form = NewFileForm(dir), title = "Add File") { vb =>
-          val name = vb.valueOf(NewFileForm(dir).fileName).trim()
-          val dirOrFile = vb.valueOf(NewFileForm(dir).dirOrFile)
-          if(dirOrFile == "dir") {
-            val newDir = new Directory(name, user, Nil, 2)
-            dir.addDirectory(newDir)
-          } else {
-            val file = new File(name, user, "/* Insert Code Here */", Some(DateTime.now))
-            dir.addFile(file)
-          }
-          if(titles == "") {
-            Redirect("/fileManager").flashing(("success" -> "Item Created"))
-          } else {
-            Redirect("/fileManager/" + titles).flashing(("success" -> "Item Created"))
-          }
-        }
+        newFileActions(user, titles, dir)._1
+      }
+    }
+  }
+  
+  def newFileP(titles: String) = VisitAction { implicit req =>
+    val titlesList = if(titles == "") Nil else titles.split("/").toList
+    asUser { user =>
+      val root = Directory.getUserRoot(user)
+      implicit val maybeItem = root.findItem(titlesList)
+      withDir { dir =>
+        newFileActions(user, titles, dir)._2
       }
     }
   }
