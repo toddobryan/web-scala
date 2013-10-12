@@ -7,6 +7,7 @@ import org.datanucleus.api.jdo.query._
 import org.datanucleus.query.typesafe._
 import models.files._
 import scalajdo.DataStore
+import util.UsesDataStore
 
 @PersistenceCapable(detachable="true")
 class Block {
@@ -54,26 +55,26 @@ class Block {
   override def toString = "Block(" + name + ", " + students + ")"
 }
 
-object Block {
+object Block extends UsesDataStore {
   def getByTeacher(t: Teacher): List[Block] = {
     val cand = QBlock.candidate
-    DataStore.pm.query[Block].filter(cand.teacher.eq(t)).executeList
+    dataStore.pm.query[Block].filter(cand.teacher.eq(t)).executeList
   }
   
   def getByStudent(s: Student): List[Block] = {
     val cand = QBlock.candidate
-    val all = DataStore.pm.query[Block].filter(cand.allBlocks.eq(true)).executeList
+    val all = dataStore.pm.query[Block].filter(cand.allBlocks.eq(true)).executeList
     all.filter(_.students.exists(_.id == s.id))
   }
   
   def getAll: List[Block] = {
     val cand = QBlock.candidate
-    DataStore.pm.query[Block].filter(cand.allBlocks.eq(true)).executeList
+    dataStore.pm.query[Block].filter(cand.allBlocks.eq(true)).executeList
   }
   
   def getByName(name: String): Option[Block] = {
     val cand = QBlock.candidate
-    DataStore.pm.query[Block].filter(cand.name.eq(name)).executeOption
+    dataStore.pm.query[Block].filter(cand.name.eq(name)).executeOption
   }
 }
 

@@ -8,6 +8,7 @@ import scalajdo._
 import models.auth._
 import models.files._
 import scala.collection.JavaConverters._
+import util.UsesDataStore
 
 @PersistenceCapable(detachable = "true")
 class Directory extends Item {
@@ -104,36 +105,36 @@ class Directory extends Item {
       case Nil => currItem
       case name1 :: more =>
         currItem match {
-          case None => return None
-          case Some(file: File) => return None
+          case Some(file: File) => None
           case Some(dir: Directory) => {
             val inDirectory = dir.content.find(_.title == name1)
             findItemHelper(more, inDirectory)
           }
+          case _ => None
         }
     }
     findItemHelper(titles, Some(this))
   }
 }
 
-object Directory {
+object Directory extends UsesDataStore {
   def getById(id: Long): Option[Directory] = {
     val cand = QDirectory.candidate
-    DataStore.pm.query[Directory].filter(cand.id.eq(id)).executeOption
+    dataStore.pm.query[Directory].filter(cand.id.eq(id)).executeOption
   }
 
   def getByOwner(owner: User): List[Directory] = {
     val cand = QDirectory.candidate
-    DataStore.pm.query[Directory].filter(cand.owner.eq(owner)).executeList
+    dataStore.pm.query[Directory].filter(cand.owner.eq(owner)).executeList
   }
   
   def getUserRoot(user: User): Directory = {
     val cand = QDirectory.candidate
-    DataStore.pm.query[Directory].filter(cand.owner.eq(user).and(cand.title.eq("Home"))).executeOption() match {
+    dataStore.pm.query[Directory].filter(cand.owner.eq(user).and(cand.title.eq("Home"))).executeOption() match {
       case Some(root) => root
       case None => {
         val root = new Directory("Home", user, Nil)
-        DataStore.pm.makePersistent(root)
+        dataStore.pm.makePersistent(root)
         root
       }
     }

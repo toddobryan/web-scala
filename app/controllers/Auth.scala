@@ -1,6 +1,7 @@
 package controllers
 
 import play.api.mvc.Controller
+import org.dupontmanual.forms
 import forms.{Form, ValidBinding}
 import forms.fields.{TextField, PasswordField}
 import models.auth.VisitAction
@@ -10,6 +11,7 @@ import models.auth.Method
 import models.auth.{User, Student}
 import forms.{Binding, InvalidBinding, ValidBinding}
 import util.ControllerHelpers._
+import util.UsesDataStore
 
 
 object LoginForm extends Form {
@@ -53,7 +55,7 @@ object NewUserForm extends Form {
   }
 }
 
-object Auth extends Controller {
+object Auth extends Controller with UsesDataStore {
   def login() = VisitAction { implicit req => 
     Ok(views.html.auth.login(Binding(LoginForm))) 
   }
@@ -66,14 +68,14 @@ object Auth extends Controller {
         req.visit.user = User.getByUsername(vb.valueOf(LoginForm.username))
         val redirectUrl: Option[String] = req.visit.redirectUrl
         req.visit.redirectUrl = None
-        DataStore.pm.makePersistent(req.visit)
+        dataStore.pm.makePersistent(req.visit)
         redirectUrl.map(Redirect(_)).getOrElse(Redirect(routes.Application.index())).flashing("success" -> "You have successfully logged in.")
       }
     }
   }
   
   def logout() = VisitAction { implicit req =>
-    DataStore.pm.deletePersistent(req.visit)
+    dataStore.pm.deletePersistent(req.visit)
     Redirect(routes.Application.index()).flashing("success" -> "You have successfully logged out.") 
   }
   
@@ -94,7 +96,7 @@ object Auth extends Controller {
   	        val info = Map("username" -> vb.valueOf(NewUserForm.username), "password" -> vb.valueOf(NewUserForm.password), 
   	       		  		 "first" -> vb.valueOf(NewUserForm.firstName), "last" -> vb.valueOf(NewUserForm.lastName))
   	        val user: User = new Student(info("username"), first = info("first"), last = info("last"), password = info("password"))
-  	        DataStore.pm.makePersistent(user)
+  	        dataStore.pm.makePersistent(user)
   	        Redirect(routes.Auth.login()).flashing("success" -> "Account created successfully! Now log in.")
   	      }
   	    }

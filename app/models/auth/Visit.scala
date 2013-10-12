@@ -5,6 +5,7 @@ import javax.jdo.annotations._
 import org.datanucleus.api.jdo.query._
 import org.datanucleus.query.typesafe._
 import scalajdo.DataStore
+import util.UsesDataStore
 
 @PersistenceCapable(detachable="true")
 class Visit {
@@ -36,7 +37,7 @@ class Visit {
   def isExpired: Boolean = System.currentTimeMillis > expiration
 }
 
-object Visit {
+object Visit extends UsesDataStore {
   val visitLength = 3600000 // millis in an hour
   var nextCleanup = System.currentTimeMillis + visitLength
   
@@ -46,12 +47,12 @@ object Visit {
       Visit.deleteExpired()
     }
     val cand = QVisit.candidate
-    DataStore.pm.query[Visit].filter(cand.uuid.eq(uuid)).executeOption()
+    dataStore.pm.query[Visit].filter(cand.uuid.eq(uuid)).executeOption()
   }
   
   def deleteExpired() {
     val cand = QVisit.candidate
-    val pm = DataStore.pm
+    val pm = dataStore.pm
     val expiredVisits = pm.query[Visit].filter(cand.expiration.lt(System.currentTimeMillis)).executeList()
     pm.deletePersistentAll(expiredVisits)
   }

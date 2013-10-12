@@ -7,6 +7,7 @@ import org.datanucleus.api.jdo.query._
 import org.datanucleus.query.typesafe._
 import scalajdo.DataStore
 import models.auth.{Block, QBlock}
+import util.UsesDataStore
 
 @PersistenceCapable(detachable="true")
 class Assignment {
@@ -49,10 +50,10 @@ class Assignment {
   def block_=(theBlock: Block) = {_block = theBlock}
 }
 
-object Assignment {
+object Assignment extends UsesDataStore {
   def getBlockAssignments(block: Block): List[Assignment] = {
     val cand = QAssignment.candidate
-    DataStore.pm.query[Assignment].filter(cand.block.eq(block)).executeList
+    dataStore.pm.query[Assignment].filter(cand.block.eq(block)).executeList
   }
 }
 

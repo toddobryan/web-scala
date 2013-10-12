@@ -4,19 +4,20 @@ import scala.tools.nsc.interpreter.{ Results => IntpResults }
 import scala.tools.nsc.interpreter.IR.{ Result => IntpResult}
 import play.api._
 import play.api.mvc._
-import webscala._ 
-import scalajdo._
+import webscala._
+import scalajdo.DataStore
 import models.files._
 import models.auth._
 import models.auth.VisitAction
 import models.auth.Authenticated
 import org.joda.time._
-import forms._
-import forms.fields._
-import forms.validators._
+import org.dupontmanual.forms._
+import org.dupontmanual.forms.fields._
+import org.dupontmanual.forms.validators._
 import util.ControllerHelpers._
+import util.UsesDataStore
 
-object Assignments extends Controller {
+object Assignments extends Controller with UsesDataStore {
   //lazy val repl = new HtmlRepl()
   
   def findStudentFile(bString: String, sString: String, dir: Directory, title: List[String])
@@ -38,7 +39,7 @@ object Assignments extends Controller {
       def assignmentName = vb.valueOf(NewAssignmentForm(block).assignmentName).trim
       Assignment.getBlockAssignments(block).find(_.title == assignmentName) match {
         case None => ValidationError(Nil)
-        case Some(_) => ValidationError(List("An assignment with this name already exists."))
+        case Some(_) => ValidationError("An assignment with this name already exists.")
       }
     }
   }
@@ -50,7 +51,7 @@ object Assignments extends Controller {
         val startCode = "/* Insert Code Here */"
         val testCode = File.defaultTestCode(assignName)
         val assignment = new Assignment(assignName, b, startCode, testCode, testCode)
-        DataStore.pm.makePersistent(assignment)
+        dataStore.pm.makePersistent(assignment)
         Redirect(routes.Assignments.editAssignment(b.name, assignName))
     }
   }
@@ -89,7 +90,7 @@ object Assignments extends Controller {
           val testCode = getParameter(req, "test")
           a.starterCode_=(startCode)
           a.testCode_=(testCode)
-          DataStore.pm.makePersistent(b)
+          dataStore.pm.makePersistent(b)
           Redirect(routes.Classes.findMyBlock(b.name))
         }
       }
@@ -109,7 +110,7 @@ object Assignments extends Controller {
            alreadyAssigned match {
              case None => {
                d.addFile(new File(a.title, u, starterCode))
-               DataStore.pm.makePersistent(u)
+               dataStore.pm.makePersistent(u)
                Redirect(routes.FileMgmt.fileManager(block + "/" + assignment))
              }
              case _ => Redirect(routes.FileMgmt.fileManager(block + "/" + assignment))

@@ -12,9 +12,9 @@ import models.auth._
 import models.auth.VisitAction
 import models.auth.Authenticated
 import org.joda.time._
-import forms._
-import forms.fields._
-import forms.validators._
+import org.dupontmanual.forms._
+import org.dupontmanual.forms.fields._
+import org.dupontmanual.forms.validators._
 import util.QuickRedirects._
 import akka.actor._
 import akka.actor.SupervisorStrategy
@@ -60,7 +60,7 @@ class CodeDirector(val id: String) extends Actor {
       }
     } catch {
       case _: Throwable => {
-        monkey ! Stop
+        //monkey ! Stop
         addedCode += 1
         (Error, "Did not receive in 10 seconds")
       }

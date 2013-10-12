@@ -1,8 +1,9 @@
 import models.auth._
 import models.files._
 import scalajdo._
+import util.UsesDataStore
 
-object TestData {
+object TestData extends UsesDataStore {
   val user1: User = new Teacher("jmiller14", "Jim", "Miller", email="jmiller@nada.com", password="temp123")
   val user2: User = new Student("amaniraj14", "Aaditya", "Manirajan", password="temp123")
   val user3: User = new User("cjin14", "Choong Won", "Jin")
@@ -25,7 +26,7 @@ object TestData {
   def load() {
     val dbFile = new java.io.File("data.h2.db")
     if (dbFile.exists) dbFile.delete()
-    val tpm = DataStore.pm
+    val tpm = dataStore.pm
     for(u <- users) {
       tpm.makePersistent(u)
     }

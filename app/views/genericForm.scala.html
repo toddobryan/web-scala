@@ -1,5 +1,5 @@
-@(form: forms.Binding, name: String = "Create/Modify")(implicit req: models.auth.VisitRequest[_])
+@(form: org.dupontmanual.forms.Binding, name: String = "Create/Modify")(implicit req: models.auth.VisitRequest[_])
 
 @main(name) {
-  @form.asHtml
+  @form.render()
 }

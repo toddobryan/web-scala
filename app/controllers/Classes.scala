@@ -4,19 +4,21 @@ import scala.tools.nsc.interpreter.{ Results => IntpResults }
 import scala.tools.nsc.interpreter.IR.{ Result => IntpResult}
 import play.api._
 import play.api.mvc._
-import webscala._ 
+import webscala._
 import scalajdo._
 import models.files._
 import models.auth._
 import models.auth.VisitAction
 import models.auth.Authenticated
 import org.joda.time._
+import org.dupontmanual.forms
 import forms._
 import forms.fields._
 import forms.validators._
 import util.ControllerHelpers._
+import util.UsesDataStore
 
-object Classes extends Controller {
+object Classes extends Controller with UsesDataStore {
   
   object NewBlockForm extends Form {
     def blockName = new TextField("blockName")
@@ -27,7 +29,7 @@ object Classes extends Controller {
       def blockName = vb.valueOf(NewBlockForm.blockName).trim
       Block.getByName(blockName) match {
         case None => ValidationError(Nil)
-        case Some(_) => ValidationError(List("A block with this name already exists."))
+        case Some(_) => ValidationError("A block with this name already exists.")
       }
     }
   }
@@ -37,7 +39,7 @@ object Classes extends Controller {
     vb: ValidBinding => 
       val blockName = vb.valueOf(NewBlockForm.blockName).trim
       val newBlock = new Block(blockName, t)
-      DataStore.pm.makePersistent(newBlock)
+      dataStore.pm.makePersistent(newBlock)
       Redirect(routes.Classes.myBlocks()).flashing(("success" -> "New Class Created"))
   }
   
@@ -79,11 +81,11 @@ object Classes extends Controller {
           if(b.id.toString == vb.valueOf(joinCode)) {
             new ValidationError(Nil)
           } else {
-            new ValidationError(List("Class and Join Code did not match."))
+            ValidationError("Class and Join Code did not match.")
           }
         }
         case None => {
-          new ValidationError(List("Class could not be found."))
+          ValidationError("Class could not be found.")
         }
       }
     }
@@ -97,10 +99,10 @@ object Classes extends Controller {
         if(b.students.contains(s))  Redirect(routes.Classes.joinBlock()).flashing(("error") -> "You are already a member of this class.")
         else {
           b.addStudent(s)
-          DataStore.pm.makePersistent(b)
+          dataStore.pm.makePersistent(b)
           val root = Directory.getUserRoot(s)
           root.addDirectory(new Directory(b.name, s, Nil))
-          DataStore.pm.makePersistent(s)
+          dataStore.pm.makePersistent(s)
           Redirect(routes.Classes.myBlocks).flashing(("success") -> ("You have been added to this class, and a class directory" 
                                                                        + " has been added to your home folder."))
       }

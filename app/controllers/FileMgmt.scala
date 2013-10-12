@@ -11,6 +11,7 @@ import models.auth._
 import models.auth.VisitAction
 import models.auth.Authenticated
 import org.joda.time._
+import org.dupontmanual.forms
 import forms._
 import forms.fields._
 import forms.validators._
@@ -26,7 +27,7 @@ object FileMgmt extends Controller {
     override def validate(vb: ValidBinding): ValidationError = {
       dir.content.filter(_.title == vb.valueOf(NewFileForm(dir).fileName).trim) match {
         case Nil => ValidationError(Nil)
-        case file :: _ => ValidationError(List("File with this name already exists."))
+        case file :: _ => ValidationError("File with this name already exists.")
       }
     }
   }

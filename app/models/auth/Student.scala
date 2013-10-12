@@ -8,7 +8,7 @@ import org.datanucleus.api.jdo.query._
 import org.datanucleus.query.typesafe._
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
-import scalajdo.DataStore
+import util.UsesDataStore
 
 @PersistenceCapable(detachable="true")
 @Inheritance(strategy=InheritanceStrategy.SUPERCLASS_TABLE)
@@ -32,10 +32,10 @@ class Student extends User {
   override def toString = username
 }
 
-object Student {
+object Student extends UsesDataStore {
   def getByUsername(username: String): Option[Student] = {
     val cand = QUser.candidate
-    DataStore.pm.query[Student].filter(cand.username.eq(username)).executeOption()
+    dataStore.pm.query[Student].filter(cand.username.eq(username)).executeOption()
   }
 }
 

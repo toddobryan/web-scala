@@ -14,6 +14,7 @@ object ApplicationBuild extends Build {
     "org.scala-lang" % "scala-swing" % "2.10.2",
     "org.scala-lang" % "scala-actors" % "2.10.2",
 
+    "com.scalatags" % "scalatags_2.10" % "0.1.4",
     "org.scalatest" %% "scalatest" % "2.0.M8",
     "org.apache.directory.studio" % "org.apache.commons.codec" % "1.8",
     "javax.mail" % "javax.mail-api" % "1.5.0",
@@ -31,7 +32,8 @@ object ApplicationBuild extends Build {
     "com.typesafe.akka" %% "akka-actor" % "2.2.1",
     "com.typesafe.akka" %% "akka-remote" % "2.2.1",
     "org.dupontmanual" %% "dm-image" % "0.1-SNAPSHOT",
-    "org.dupontmanual" %% "scalajdo" % "0.1-SNAPSHOT"
+    "org.dupontmanual" %% "scalajdo" % "0.1-SNAPSHOT",
+    "org.dupontmanual" %% "dm-forms" % "0.1-SNAPSHOT"
   )
 
   val mySettings = Seq(

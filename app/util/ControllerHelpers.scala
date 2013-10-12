@@ -12,6 +12,7 @@ import models.auth._
 import models.auth.VisitAction
 import models.auth.Authenticated
 import org.joda.time._
+import org.dupontmanual.forms
 import forms._
 import forms.fields._
 import forms.validators._
@@ -30,7 +31,6 @@ object ControllerHelpers extends Controller {
   object Okay {
     def apply[C](content: C)(implicit writable: http.Writeable[C], req: VRequest): SimpleResult[C] = {
       req.visit.redirectUrl = Some(req.uri)
-      DataStore.pm.makePersistent(req.visit)
       Ok(content)
     }
   }

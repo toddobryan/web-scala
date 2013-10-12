@@ -4,19 +4,21 @@ import scala.tools.nsc.interpreter.{ Results => IntpResults }
 import scala.tools.nsc.interpreter.IR.{ Result => IntpResult}
 import play.api._
 import play.api.mvc._
-import webscala._ 
+import webscala._
 import scalajdo._
 import models.files._
 import models.auth._
 import models.auth.VisitAction
 import models.auth.Authenticated
 import org.joda.time._
+import org.dupontmanual.forms
 import forms._
 import forms.fields._
 import forms.validators._
 import util.ControllerHelpers._
+import util.UsesDataStore
 
-object FileHandlers extends Controller {
+object FileHandlers extends Controller with UsesDataStore {
   
    def fileIde(titles: String) = VisitAction { implicit req =>
     asUser { u => 
@@ -50,14 +52,14 @@ object FileHandlers extends Controller {
       case Some(user) => {
         val root = Directory.getUserRoot(user)
         root.findItem(titles.split("/").toList) match {
-          case None => println("Error in saving file.")
           case Some(_: Directory) => println("This is a directory. What happened?")
           case Some(f: File) => {
             f.content_=(content)
             f.lastModified_=(DateTime.now)
-            DataStore.pm.makePersistent(f)
+            dataStore.pm.makePersistent(f)
             println("No errors in compiling")
           }
+          case _ => println("Error in saving file.")
         }
       }
     }
@@ -73,15 +75,15 @@ object FileHandlers extends Controller {
       case Some(user) => {
         val root = Directory.getUserRoot(user)
         root.findItem(titles.split("/").toList) match {
-          case None => println("Error in saving file test.")
           case Some(_: Directory) => println("This is a directory. What happened?")
           case Some(f: File) => {
             f.content_=(content)
             f.tests_=(testCode)
             f.lastModified_=(DateTime.now)
-            DataStore.pm.makePersistent(f)
+            dataStore.pm.makePersistent(f)
             println("No errors in saving")
           }
+          case _ => println("Error in saving file test.")
         }
       }
     }
@@ -94,7 +96,6 @@ object FileHandlers extends Controller {
       case Some(user) => {
         val root = Directory.getUserRoot(user)
         root.findItem(titles.split("/").toList) match {
-          case None => Redirect(routes.Application.index).flashing(("error" -> "File not found."))
           case Some(_: Directory) => Redirect(routes.Application.index).flashing(("error" -> "This is a directory"))
           case Some(f: File) => {
             val contentRes = SafeCode.runCode { (new HtmlRepl).repl.interpret(f.content) }
@@ -111,6 +112,7 @@ object FileHandlers extends Controller {
               case _ => Ok(views.html.webscala.printTestResults("The following error occurred while running your file contents: \n" + contentRes._2))
             }
           }
+          case _ => Redirect(routes.Application.index).flashing(("error" -> "File not found."))
         }
       }
     }  

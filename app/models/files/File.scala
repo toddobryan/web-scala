@@ -8,6 +8,7 @@ import scalajdo._
 import models.auth._
 import scala.tools.nsc.interpreter.{ Results => IntpResults }
 import webscala._
+import util.UsesDataStore
 
 abstract class Item {
   def title: String
@@ -219,15 +220,15 @@ class File extends Item {
   }
 }
   
-object File {
+object File extends UsesDataStore {
 	def getById(id: Long): Option[File] = {
 	  val cand = QFile.candidate
-	  DataStore.pm.query[File].filter(cand.id.eq(id)).executeOption
+	  dataStore.pm.query[File].filter(cand.id.eq(id)).executeOption
 	}
 	
 	def getByOwner(owner: User): List[File] = {
 	  val cand = QFile.candidate
-	  DataStore.pm.query[File].filter(cand.owner.eq(owner)).executeList
+	  dataStore.pm.query[File].filter(cand.owner.eq(owner)).executeList
 	}
 	
 	def mostRecentFour(owner: User): List[File] = {
