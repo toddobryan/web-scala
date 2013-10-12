@@ -26,7 +26,10 @@ import akka.util.Timeout
 import actors._
 import ExecutionContext.Implicits.global
 
+
 class CodeDirector(val id: String) extends Actor {
+  import CodeDirector._
+  
   var addedCode = 0
   
   def receive = {
@@ -43,12 +46,12 @@ class CodeDirector(val id: String) extends Actor {
   
   def run(code: String): (IntpResult, String) = {
     import IntpResults._
-    val name = "monkey" + id + addedCode
+    val name = id + "monkey" + addedCode
     val monkey = context.child(name) match {
       case Some(m) => m
       case None => context.actorOf(Props[CodeMonkey], name)
     }
-    val askMonkey = (monkey ? code)
+    val askMonkey = (monkey ? CodeToRun(code))
     try {
       Await.result(askMonkey, 10 seconds) match {
         case Error => (Error, "Exception thrown")
@@ -57,7 +60,7 @@ class CodeDirector(val id: String) extends Actor {
       }
     } catch {
       case _: Throwable => {
-        monkey ! Kill
+        monkey ! Stop
         addedCode += 1
         (Error, "Did not receive in 10 seconds")
       }
@@ -67,4 +70,6 @@ class CodeDirector(val id: String) extends Actor {
 
 object CodeDirector {
   def props(id: String) = Props(classOf[CodeDirector], id)
+  
+  case class CodeToRun(code: String)
 }

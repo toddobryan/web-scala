@@ -43,19 +43,29 @@ object Assignments extends Controller {
     }
   }
   
+  def newAssignmentActions(b: Block)(implicit req: VRequest) = {
+    formHandle(form = NewAssignmentForm(b), title = "New Assignment") {
+      vb: ValidBinding => 
+        val assignName = vb.valueOf(NewAssignmentForm(b).assignmentName).trim
+        val startCode = "/* Insert Code Here */"
+        val testCode = File.defaultTestCode(assignName)
+        val assignment = new Assignment(assignName, b, startCode, testCode, testCode)
+        DataStore.pm.makePersistent(assignment)
+        Redirect(routes.Assignments.editAssignment(b.name, assignName))
+    }
+  }
+  
   def newAssignment(block: String) = VisitAction { implicit req =>
     asTeacher { t =>
       implicit val maybeBlock = Block.getByTeacher(t).find(_.name == block)
-      withBlock { b =>
-        formHandle(form = NewAssignmentForm(b), title = "New Assignment") { vb =>
-          val assignName = vb.valueOf(NewAssignmentForm(b).assignmentName).trim
-          val startCode = "/* Insert Code Here */"
-          val testCode = File.defaultTestCode(assignName)
-          val assignment = new Assignment(assignName, b, startCode, testCode, testCode)
-          DataStore.pm.makePersistent(assignment)
-          Redirect(routes.Assignments.editAssignment(b.name, assignName))
-        }
-      }
+      withBlock { b => newAssignmentActions(b)._1 }
+    }
+  }
+  
+  def newAssignmentP(block: String) = VisitAction { implicit req =>
+    asTeacher { t =>
+      implicit val maybeBlock = Block.getByTeacher(t).find(_.name == block)
+      withBlock { b => newAssignmentActions(b)._2}
     }
   }
   
@@ -64,17 +74,23 @@ object Assignments extends Controller {
       implicit val maybeBlock = Block.getByTeacher(t).find(_.name == block)
       withBlock { b => 
         implicit val maybeAssign = Assignment.getBlockAssignments(b)find(_.title == assignment)
+        withAssignment { a => Okay(views.html.webscala.editAssignment(b, a)) }
+      }
+    }
+  }
+  
+  def editAssignmentP(block: String, assignment: String) = VisitAction { implicit req =>
+    asTeacher { t =>
+      implicit val maybeBlock = Block.getByTeacher(t).find(_.name == block)
+      withBlock { b => 
+        implicit val maybeAssign = Assignment.getBlockAssignments(b)find(_.title == assignment)
         withAssignment { a => 
-          if(req.method == "GET") {
-            Okay(views.html.webscala.editAssignment(b, a))
-          } else {
-            val startCode = getParameter(req, "start")
-            val testCode = getParameter(req, "test")
-            a.starterCode_=(startCode)
-            a.testCode_=(testCode)
-            DataStore.pm.makePersistent(b)
-            Redirect(routes.Classes.findMyBlock(b.name))
-          }
+          val startCode = getParameter(req, "start")
+          val testCode = getParameter(req, "test")
+          a.starterCode_=(startCode)
+          a.testCode_=(testCode)
+          DataStore.pm.makePersistent(b)
+          Redirect(routes.Classes.findMyBlock(b.name))
         }
       }
     }

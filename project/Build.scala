@@ -13,34 +13,39 @@ object ApplicationBuild extends Build {
     "org.scala-lang" % "scala-compiler" % "2.10.2",
     "org.scala-lang" % "scala-swing" % "2.10.2",
     "org.scala-lang" % "scala-actors" % "2.10.2",
-    "org.scalatest" % "scalatest_2.10" % "2.0.M5b",
-    "commons-codec" % "commons-codec" % "1.6",
-    "javax.mail" % "mail" % "1.4.5",
+
+    "org.scalatest" %% "scalatest" % "2.0.M8",
+    "org.apache.directory.studio" % "org.apache.commons.codec" % "1.8",
+    "javax.mail" % "javax.mail-api" % "1.5.0",
     "org.mindrot" % "jbcrypt" % "0.3m",
 
-    "com.h2database" % "h2" % "1.3.166",
-    "javax.jdo" % "jdo-api" % "3.0",
-    "org.datanucleus" % "datanucleus-core" % "3.2.3",
-    "org.datanucleus" % "datanucleus-api-jdo" % "3.2.2",
+    "com.h2database" % "h2" % "1.3.173",
+    "javax.jdo" % "jdo-api" % "3.0.1",
+    "org.datanucleus" % "datanucleus-core" % "3.2.7",
+    "org.datanucleus" % "datanucleus-api-jdo" % "3.2.4",
     "org.datanucleus" % "datanucleus-enhancer" % "3.1.1",
     "org.datanucleus" % "datanucleus-jdo-query" % "3.0.2",
-    "org.datanucleus" % "datanucleus-rdbms" % "3.2.2",
+    "org.datanucleus" % "datanucleus-rdbms" % "3.2.6",
     
-    "com.typesafe.akka" %% "akka-actor" % "2.2.0"
+    "com.typesafe" % "config" % "1.0.2",
+    "com.typesafe.akka" %% "akka-actor" % "2.2.1",
+    "com.typesafe.akka" %% "akka-remote" % "2.2.1",
+    "org.dupontmanual" %% "dm-image" % "0.1-SNAPSHOT",
+    "org.dupontmanual" %% "scalajdo" % "0.1-SNAPSHOT"
   )
 
+  val mySettings = Seq(
+    scalaVersion := "2.10.2",
+    javacOptions ++= Seq("-source", "1.6", "-target", "1.6", "-bootclasspath", "/usr/lib/jvm/java-6-oracle/jre/lib/rt.jar"),
+    scalacOptions ++= Seq("-deprecation", "-feature"),
+    resolvers ++= Seq("Sonatype Public" at "https://oss.sonatype.org/content/groups/public/",
+                      "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
+                      "Java.net" at "http://download.java.net/maven/2/")
+  )
 
   val main = play.Project(appName, appVersion, appDependencies).settings(
     // Add your own project settings here
-    ((scalaVersion := "2.10.2") +:
-	 (resolvers += "Sonatype Public" at "https://oss.sonatype.org/content/groups/public/") +:
-     (resolvers += "Java.net" at "http://download.java.net/maven/2/") +:
-     (javacOptions ++= Seq("-source", "1.6", "-target", "1.6", "-bootclasspath", "/usr/lib/jvm/java-6-oracle/jre/lib/rt.jar")) +:
-     (scalacOptions ++= Seq("-deprecation", "-feature")) +:
-      Nucleus.settings): _*
-    
-  ) dependsOn RootProject( uri("git://github.com/toddobryan/image.git")
-  ) dependsOn RootProject( uri("git://github.com/toddobryan/scalajdo.git"))
+    (mySettings ++ Nucleus.settings): _*)
 }
 
 object Nucleus {

@@ -77,14 +77,12 @@ object ControllerHelpers extends Controller {
    * BindingToResult parameter on the valid binding.
    */
   def formHandle(form: Form, title: String = "Create/Modify")(ba: ToResult[ValidBinding])
-  				(implicit req: VRequest): PlainResult = {
-    if(req.method == "GET") Ok(views.html.genericForm(Binding(form), title))
-    else {	
-      Binding(form, req) match {
-        case ib: InvalidBinding => Ok(views.html.genericForm(ib))
-        case vb: ValidBinding => ba(vb)
-      }
-    }
+  				(implicit req: VRequest): (PlainResult, PlainResult) = {
+    (Ok(views.html.genericForm(Binding(form), title)),
+     Binding(form, req) match {
+       case ib: InvalidBinding => Ok(views.html.genericForm(ib))
+       case vb: ValidBinding => ba(vb)
+     })
   }
   
   /* These methods are like the User matching methods above,

@@ -18,6 +18,7 @@ import forms.validators._
 import util.QuickRedirects._
 import akka.actor._
 import actors._
+import akka.actor.SupervisorStrategy._
 import scala.annotation.Annotation
 import scala.util.{Try, Failure}
 import scala.concurrent._
@@ -28,11 +29,13 @@ import scala.language.postfixOps
 object TimeoutFuture
 
 class CodeMonkey extends Actor {
+  import CodeDirector._
+  
   val htmlRepl = new HtmlRepl()
   
   def receive = {
-    case c: String => checkCode(c, sender)
-    case _: Any => throw new IllegalArgumentException
+    case CodeToRun(c: String) => checkCode(c, sender)
+    case Stop => context.stop(self)
   }
   
   def checkCode(code: String, director: ActorRef) = {
