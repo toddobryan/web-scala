@@ -5,17 +5,13 @@ import play.Project._
 object ApplicationBuild extends Build {
 
   val appName         = "web-scala"
-  val appVersion      = "1.0-SNAPSHOT"
+  val appVersion      = "0.1"
 
   val appDependencies = Seq(
     // Add your project dependencies here,
     jdbc,
-    "org.scala-lang" % "scala-compiler" % "2.10.2",
-    "org.scala-lang" % "scala-swing" % "2.10.2",
-    "org.scala-lang" % "scala-actors" % "2.10.2",
-    "org.scala-lang" % "scala-library" % "2.10.2",
-
-    "com.scalatags" % "scalatags_2.10" % "0.1.4",
+    "org.scala-lang" % "scala-compiler" % "2.10.3",
+    "com.scalatags" %% "scalatags" % "0.1.4",
     "org.scalatest" %% "scalatest" % "2.0.M8",
     "org.apache.directory.studio" % "org.apache.commons.codec" % "1.8",
     "javax.mail" % "javax.mail-api" % "1.5.0",
@@ -32,7 +28,7 @@ object ApplicationBuild extends Build {
   )
 
   val mySettings = Seq(
-    scalaVersion := "2.10.2",
+    scalaVersion := "2.10.3",
     javacOptions ++= Seq("-source", "1.6", "-target", "1.6", "-bootclasspath", "/usr/lib/jvm/java-6-oracle/jre/lib/rt.jar"),
     scalacOptions ++= Seq("-deprecation", "-feature"),
     resolvers ++= Seq("Sonatype Public" at "https://oss.sonatype.org/content/groups/public/",
@@ -53,7 +49,7 @@ object Nucleus {
   // our task
   val enhance = TaskKey[Unit]("enhance")
 
-  val settings: Seq[Project.Setting[_]] = Seq(
+  val settings: Seq[Def.Setting[_]] = Seq(
     ivyConfigurations += Config,
     enhance <<= Seq(compile in Compile).dependOn,
     enhance in Config <<= (fullClasspath in Test, runner, streams) map { (cp, processRunner, str) =>
