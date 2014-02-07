@@ -36,7 +36,7 @@ object FileMgmt extends Controller {
   
   def newFileHomeP = newFile("")
   
-  def newFileActions(user: User, titles: String, dir: Directory)(implicit req: VRequest):(PlainResult, PlainResult) = { 
+  def newFileActions(user: User, titles: String, dir: Directory)(implicit req: VRequest):(SimpleResult, SimpleResult) = { 
     formHandle(form = NewFileForm(dir), title = "Add File") {
       vb: ValidBinding => {
         val name = vb.valueOf(NewFileForm(dir).fileName).trim()

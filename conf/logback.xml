@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- For assistance related to logback-translator or configuration  -->
+<!-- files in general, please contact the logback user mailing list -->
+<!-- at http://www.qos.ch/mailman/listinfo/logback-user             -->
+<!--                                                                -->
+<!-- For professional support please see                            -->
+<!--    http://www.qos.ch/shop/products/professionalSupport         -->
+<!--                                                                -->
+<configuration>
+  <appender name="A1" class="ch.qos.logback.core.FileAppender">
+    <File>logs/datanucleus.log</File>
+    <encoder>
+      <pattern>%d %-5level [%thread] %logger{0}: %msg%n</pattern>
+    </encoder>
+  </appender>
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d %-5level [%thread] %logger{0}: %msg%n</pattern>
+    </encoder>
+  </appender>
+  <logger name="play" level="INFO">
+    <appender-ref ref="STDOUT"/>
+  </logger>
+  <logger name="application" level="DEBUG">
+    <appender-ref ref="STDOUT"/>
+  </logger>
+  <logger name="DataNucleus.ClassLoading" level="INFO">
+    <appender-ref ref="A1"/>
+  </logger>
+  <logger name="DataNucleus.Connection" level="INFO">
+    <appender-ref ref="A1"/>
+  </logger>
+  <logger name="DataNucleus.General" level="INFO">
+    <appender-ref ref="A1"/>
+  </logger>
+  <logger name="DataNucleus.Cache" level="INFO">
+    <appender-ref ref="A1"/>
+  </logger>
+  <logger name="DataNucleus.Datastore" level="INFO">
+    <appender-ref ref="A1"/>
+  </logger>
+  <logger name="DataNucleus.Transaction" level="INFO">
+    <appender-ref ref="A1"/>
+  </logger>
+  <logger name="DataNucleus.Utility" level="INFO">
+    <appender-ref ref="A1"/>
+  </logger>
+  <logger name="DataNucleus.JDO" level="INFO">
+    <appender-ref ref="A1"/>
+  </logger>
+  <logger name="DataNucleus.Lifecycle" level="INFO">
+    <appender-ref ref="A1"/>
+  </logger>
+  <logger name="DataNucleus.ValueGeneration" level="INFO">
+    <appender-ref ref="A1"/>
+  </logger>
+  <logger name="DataNucleus.Plugin" level="INFO">
+    <appender-ref ref="A1"/>
+  </logger>
+  <logger name="DataNucleus.MetaData" level="INFO">
+    <appender-ref ref="A1"/>
+  </logger>
+  <logger name="DataNucleus.SchemaTool" level="DEBUG">
+    <appender-ref ref="A1"/>
+  </logger>
+  <logger name="DataNucleus.Query" level="INFO">
+    <appender-ref ref="STDOUT"/>
+  </logger>
+  <logger name="DataNucleus.Persistence" level="INFO">
+    <appender-ref ref="STDOUT"/>
+  </logger>
+  <logger name="DataNucleus.Enhancer" level="INFO">
+    <appender-ref ref="A1"/>
+  </logger>
+  <root level="DEBUG">
+    <appender-ref ref="STDOUT"/>
+  </root>
+</configuration>

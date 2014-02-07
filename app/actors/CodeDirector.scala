@@ -1,7 +1,7 @@
 package actors
 
-import scala.tools.nsc.interpreter.{ Results => IntpResults }
-import scala.tools.nsc.interpreter.IR.{ Result => IntpResult}
+import scala.tools.nsc.interpreter.Results
+import scala.tools.nsc.interpreter.IR.Result
 import controllers.routes
 import play.api._
 import play.api.mvc._
@@ -44,8 +44,7 @@ class CodeDirector(val id: String) extends Actor {
   
   implicit val timeout = Timeout(15 seconds)
   
-  def run(code: String): (IntpResult, String) = {
-    import IntpResults._
+  def run(code: String): (Result, String) = {
     val name = id + "monkey" + addedCode
     val monkey = context.child(name) match {
       case Some(m) => m
@@ -54,15 +53,15 @@ class CodeDirector(val id: String) extends Actor {
     val askMonkey = (monkey ? CodeToRun(code))
     try {
       Await.result(askMonkey, 10 seconds) match {
-        case Error => (Error, "Exception thrown")
-        case x: IntpResult => (x, "No exceptions thrown")
-        case _ => (Error, "CodeMonkey did not send correct value")
+        case Error => (Results.Error, "Exception thrown")
+        case x: Results.Result => (x, "No exceptions thrown")
+        case _ => (Results.Error, "CodeMonkey did not send correct value")
       }
     } catch {
       case _: Throwable => {
         //monkey ! Stop
         addedCode += 1
-        (Error, "Did not receive in 10 seconds")
+        (Results.Error, "Did not receive in 10 seconds")
       }
     }
   }

@@ -5,7 +5,7 @@ import javax.jdo.JDOHelper
 import org.datanucleus.api.jdo.JDOPersistenceManagerFactory
 
 object UsesDataStore {
-  val dataStore: DataStore = new DataStore(() => JDOHelper.getPersistenceManagerFactory("web-scala").asInstanceOf[JDOPersistenceManagerFactory])
+  val dataStore: DataStore = new DataStore(() => JDOHelper.getPersistenceManagerFactory("webscala").asInstanceOf[JDOPersistenceManagerFactory])
 }
 
 trait UsesDataStore {

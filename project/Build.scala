@@ -13,6 +13,7 @@ object ApplicationBuild extends Build {
     "org.scala-lang" % "scala-compiler" % "2.10.2",
     "org.scala-lang" % "scala-swing" % "2.10.2",
     "org.scala-lang" % "scala-actors" % "2.10.2",
+    "org.scala-lang" % "scala-library" % "2.10.2",
 
     "com.scalatags" % "scalatags_2.10" % "0.1.4",
     "org.scalatest" %% "scalatest" % "2.0.M8",
@@ -20,20 +21,14 @@ object ApplicationBuild extends Build {
     "javax.mail" % "javax.mail-api" % "1.5.0",
     "org.mindrot" % "jbcrypt" % "0.3m",
 
-    "com.h2database" % "h2" % "1.3.173",
-    "javax.jdo" % "jdo-api" % "3.0.1",
-    "org.datanucleus" % "datanucleus-core" % "3.2.7",
-    "org.datanucleus" % "datanucleus-api-jdo" % "3.2.4",
-    "org.datanucleus" % "datanucleus-enhancer" % "3.1.1",
-    "org.datanucleus" % "datanucleus-jdo-query" % "3.0.2",
-    "org.datanucleus" % "datanucleus-rdbms" % "3.2.6",
+    "com.h2database" % "h2" % "1.3.172",
     
     "com.typesafe" % "config" % "1.0.2",
     "com.typesafe.akka" %% "akka-actor" % "2.2.1",
     "com.typesafe.akka" %% "akka-remote" % "2.2.1",
     "org.dupontmanual" %% "dm-image" % "0.1-SNAPSHOT",
     "org.dupontmanual" %% "scalajdo" % "0.1-SNAPSHOT",
-    "org.dupontmanual" %% "dm-forms" % "0.1-SNAPSHOT"
+    "org.dupontmanual" %% "dm-forms" % "0.2-SNAPSHOT"
   )
 
   val mySettings = Seq(
@@ -51,56 +46,36 @@ object ApplicationBuild extends Build {
 }
 
 object Nucleus {
-  
   // defines our own ivy config that wont get packaged as part of your app
   // notice that it extends the Compile scope, so we inherit that classpath
   val Config = config("nucleus") extend Compile
 
   // our task
   val enhance = TaskKey[Unit]("enhance")
-  
-  // implementation
-  val settings:Seq[Project.Setting[_]] = Seq(
-    // let ivy know about our "nucleus" config
-    ivyConfigurations += Config,
-    // add the enhancer dependency to our nucleus ivy config
-    libraryDependencies += "org.datanucleus" % "datanucleus-enhancer" % "3.0.1" % Config.name,
-    // fetch the classpath for our nucleus config
-    // as we inherit Compile this will be the fullClasspath for Compile + "datanucleus-enhancer" jar 
-    //fullClasspath in Config <<= (classpathTypes in enhance, update).map{(ct, report) =>
-    //  Classpaths.managedJars(Config, ct, report)
-    //},
-    // add more parameters as your see fit
-    //enhance in Config <<= (fullClasspath in Config, runner, streams).map{(cp, run, s) =>
-    enhance <<= Seq(compile in Compile).dependOn,
-    enhance in Config <<= (dependencyClasspath in Compile, classDirectory in Compile, runner, streams)
-        map { (deps, classes, run, s) => 
 
-      // Properties
-      val classpath = (deps.files :+ classes)
-      
-      
-      // the classpath is attributed, we only want the files
-      //val classpath = cp.files
-      // the options passed to the Enhancer... 
-      val options = Seq("-v") ++ findAllClassesRecursively(classes).map(_.getAbsolutePath)
-      Thread.sleep(1000)
-      
-      // run returns an option of errormessage
-      val result = run.run("org.datanucleus.enhancer.DataNucleusEnhancer", classpath, options, s.log)
-      // if there is an errormessage, throw an exception
+  val settings: Seq[Project.Setting[_]] = Seq(
+    ivyConfigurations += Config,
+    enhance <<= Seq(compile in Compile).dependOn,
+    enhance in Config <<= (fullClasspath in Test, runner, streams) map { (cp, processRunner, str) =>
+      val options = Seq("-v", "-pu", "webscala")
+      val result = processRunner.run("org.datanucleus.enhancer.DataNucleusEnhancer", cp.files, options, str.log)
       result.foreach(sys.error)
-    }
-  )
-  
+    })
+      
+  /*def enhanceClasses(runner: ScalaRun, classpath: Seq[File], classes: File, streams: TaskStreams) = {
+    val options = Seq("-v") ++ findAllClassesRecursively(classes).map(_.getAbsolutePath)
+    val result = runner.run("org.datanucleus.enhancer.DataNucleusEnhancer", classpath, options, streams.log)
+    result.foreach(sys.error)
+  }
+      
   def findAllClassesRecursively(dir: File): Seq[File] = {
     if (dir.isDirectory) {
       val files = dir.listFiles
-      files.flatMap(findAllClassesRecursively(_)) 
+      files.flatMap(findAllClassesRecursively(_))
     } else if (dir.getName.endsWith(".class")) {
       Seq(dir)
     } else {
       Seq.empty
     }
-  }
+  }*/
 }

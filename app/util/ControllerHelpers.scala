@@ -23,13 +23,13 @@ object ControllerHelpers extends Controller {
   
   // Type Aliases
   type VRequest = VisitRequest[AnyContent]
-  type ToResult[T] = T => PlainResult
+  type ToResult[T] = T => SimpleResult
 
   /* To help with redirection, this is WebScala's own Ok method, which Oks the result
    * while also updating the request redirectTo url redirect to.
    */
   object Okay {
-    def apply[C](content: C)(implicit writable: http.Writeable[C], req: VRequest): SimpleResult[C] = {
+    def apply[C](content: C)(implicit writable: http.Writeable[C], req: VRequest) = {
       req.visit.redirectUrl = Some(req.uri)
       Ok(content)
     }
@@ -42,7 +42,7 @@ object ControllerHelpers extends Controller {
    */
   
   // Requires there to be an active user; redirects to error if there isn't
-  def asUser(ufun: ToResult[User])(implicit req: VRequest): PlainResult = {
+  def asUser(ufun: ToResult[User])(implicit req: VRequest): SimpleResult = {
     req.visit.user match {
       case Some(u) => ufun(u)
       case None => UserRedirect()
@@ -52,7 +52,7 @@ object ControllerHelpers extends Controller {
   
   // Matches to a student or teacher and acts accordingly
   def teacherOrStudent(tfun: ToResult[Teacher])(sfun: ToResult[Student])
-  					  (implicit req: VRequest): PlainResult = {
+  					  (implicit req: VRequest): SimpleResult = {
     val errMes = "You are neither a student or teacher. Contact a system administrator."
     asUser { _ match { case t: Teacher => tfun(t) 
     				   case s: Student => sfun(s)
@@ -60,13 +60,13 @@ object ControllerHelpers extends Controller {
   }
   
   // Redirects if a teacher is not logged in
-  def asTeacher(tfun: ToResult[Teacher])(implicit req: VRequest): PlainResult = {
+  def asTeacher(tfun: ToResult[Teacher])(implicit req: VRequest): SimpleResult = {
     val sfun: ToResult[Student] = s => Error("You must be logged in as a teacher for this request.")
     teacherOrStudent(tfun)(sfun)
   }
   
   // Redirects if a student is not logged in
-  def asStudent(sfun: ToResult[Student])(implicit req: VRequest): PlainResult = {
+  def asStudent(sfun: ToResult[Student])(implicit req: VRequest): SimpleResult = {
     val tfun: ToResult[Teacher] = t => Error("You must be logged in as a student for this request.")
     teacherOrStudent(tfun)(sfun)
   }
@@ -77,7 +77,7 @@ object ControllerHelpers extends Controller {
    * BindingToResult parameter on the valid binding.
    */
   def formHandle(form: Form, title: String = "Create/Modify")(ba: ToResult[ValidBinding])
-  				(implicit req: VRequest): (PlainResult, PlainResult) = {
+  				(implicit req: VRequest): (SimpleResult, SimpleResult) = {
     (Ok(views.html.genericForm(Binding(form), title)),
      Binding(form, req) match {
        case ib: InvalidBinding => Ok(views.html.genericForm(ib))
@@ -92,30 +92,30 @@ object ControllerHelpers extends Controller {
    */
   // Template for matching items and blocks from the database.
   def withObject[T](maybeObj: Option[T], errMes: String)
-  				   (objfun: ToResult[T])(implicit req: VRequest): PlainResult = {
+  				   (objfun: ToResult[T])(implicit req: VRequest): SimpleResult = {
     maybeObj match { case Some(o) => objfun(o); case None => Error(errMes) }
   }
   
   // withObject
   def withObject[T](errMes: String)
-  				   (objfun: ToResult[T])(implicit req: VRequest, maybeObj: Option[T]): PlainResult = {
+  				   (objfun: ToResult[T])(implicit req: VRequest, maybeObj: Option[T]): SimpleResult = {
     withObject(maybeObj, errMes)(objfun)
   }
   
   // An implementation of withObject for matching items.
   def withItem(maybeItem: Option[Item])(ifun: ToResult[Item])
-  			  (implicit req: VRequest): PlainResult = {
+  			  (implicit req: VRequest): SimpleResult = {
     val errMes = "No such item exists in your directory."
     withObject(maybeItem, errMes)(ifun)
   }
   
-  def withItem(ifun: ToResult[Item])(implicit req: VRequest, maybeItem: Option[Item]): PlainResult = {
+  def withItem(ifun: ToResult[Item])(implicit req: VRequest, maybeItem: Option[Item]): SimpleResult = {
     withItem(maybeItem)(ifun)
   }
   
   // Pattern matches an Option[Item] and acts depending on the result.
   def dirOrFile(maybeItem: Option[Item])(dfun: ToResult[Directory])(ffun: ToResult[File])
-  			   (implicit req: VRequest): PlainResult = {
+  			   (implicit req: VRequest): SimpleResult = {
     withItem(maybeItem) {
       _ match {case d: Directory => dfun(d)
                case f: File => ffun(f)
@@ -124,44 +124,44 @@ object ControllerHelpers extends Controller {
   }
   
   // Pattern matches an Option[Item], and redirects if the item is not a directory.
-  def withDir(maybeItem: Option[Item])(dfun: ToResult[Directory])(implicit req: VRequest): PlainResult = {
+  def withDir(maybeItem: Option[Item])(dfun: ToResult[Directory])(implicit req: VRequest): SimpleResult = {
     val ffun: ToResult[File] = f => Error("A directory is required for this action. A file was found.")
     dirOrFile(maybeItem)(dfun)(ffun)
   }
   
-  def withDir(dfun: ToResult[Directory])(implicit req: VRequest, maybeItem: Option[Item]): PlainResult = {
+  def withDir(dfun: ToResult[Directory])(implicit req: VRequest, maybeItem: Option[Item]): SimpleResult = {
     withDir(maybeItem)(dfun)
   }
   
   // Pattern matches an Option[Item], and redirects if the item is not a file.
-  def withFile(maybeItem: Option[Item])(ffun: ToResult[File])(implicit req: VRequest): PlainResult = {
+  def withFile(maybeItem: Option[Item])(ffun: ToResult[File])(implicit req: VRequest): SimpleResult = {
     val dfun: ToResult[Directory] = d => Error("A file is required for this action. A directory was found.")
     dirOrFile(maybeItem)(dfun)(ffun)
   }
   
-  def withFile(ffun: ToResult[File])(implicit req: VRequest, maybeItem: Option[Item]): PlainResult = {
+  def withFile(ffun: ToResult[File])(implicit req: VRequest, maybeItem: Option[Item]): SimpleResult = {
     withFile(maybeItem)(ffun)
   }
   
   // An implementation of withObject for matching Blocks obtained from the database
-  def withBlock(maybeBlock: Option[Block])(bfun: ToResult[Block])(implicit req: VRequest): PlainResult = {
+  def withBlock(maybeBlock: Option[Block])(bfun: ToResult[Block])(implicit req: VRequest): SimpleResult = {
     val errMes = "No such item exists in your directory."
     withObject(maybeBlock, errMes)(bfun)
   }
   
-  def withBlock(bfun: ToResult[Block])(implicit req: VRequest, maybeBlock: Option[Block]): PlainResult = {
+  def withBlock(bfun: ToResult[Block])(implicit req: VRequest, maybeBlock: Option[Block]): SimpleResult = {
     withBlock(maybeBlock)(bfun)
   }
   
   // An implementation of withObject for matching Assignments obtained from the database
   def withAssignment(maybeAssign: Option[Assignment])(afun: ToResult[Assignment])
-  					(implicit req: VRequest): PlainResult = {
+  					(implicit req: VRequest): SimpleResult = {
     val errMes = "No such assignment exists in this directory"
     withObject(maybeAssign, errMes)(afun)
   }
   
   def withAssignment(afun: ToResult[Assignment])
-      (implicit req: VRequest, maybeAssignment: Option[Assignment]): PlainResult = {
+      (implicit req: VRequest, maybeAssignment: Option[Assignment]): SimpleResult = {
     withAssignment(maybeAssignment)(afun)
   }
   

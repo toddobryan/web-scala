@@ -21,29 +21,29 @@ object QuickRedirects extends Controller {
   
   // Type Aliases
   type VRequest = VisitRequest[AnyContent]
-  type ToResult[T] = T => PlainResult
+  type ToResult[T] = T => SimpleResult
   
   // Redirects to the login page
   object LoginError {
-   def apply(message: String)(implicit req: VRequest): PlainResult = {
+   def apply(message: String)(implicit req: VRequest): SimpleResult = {
       Redirect(routes.Application.index()).flashing(("error" -> message))
     }
   }
   
   // An object to create generic redirects with changing messages.
   object Error {
-    def apply(message: String)(implicit req: VRequest): PlainResult = {
+    def apply(message: String)(implicit req: VRequest): SimpleResult = {
       Redirect(req.visit.redirectUrl.getOrElse(routes.Application.index.url)
         ).flashing(("error" -> message)) 
     }
     
-    def apply(implicit req: VRequest): PlainResult = {
+    def apply(implicit req: VRequest): SimpleResult = {
       apply("An error occurred while trying to access this page.")
     }
   }
   
   object UserRedirect {
-    def apply()(implicit req: VRequest): PlainResult = {
+    def apply()(implicit req: VRequest): SimpleResult = {
       LoginError("You must be logged in as a user for this request.")
     }
   }

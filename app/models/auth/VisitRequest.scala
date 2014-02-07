@@ -14,7 +14,7 @@ class VisitRequest[A](val request: Request[A]) extends WrappedRequest[A](request
 
 // TODO: we need a cache system
 object VisitAction extends UsesDataStore {
-  def apply[A](p: BodyParser[A])(f: VisitRequest[A] => PlainResult) = {
+  def apply[A](p: BodyParser[A])(f: VisitRequest[A] => SimpleResult) = {
     Action(p)(request => {
       dataStore.withTransaction { pm =>
         val visitReq = new VisitRequest[A](request)
@@ -33,13 +33,13 @@ object VisitAction extends UsesDataStore {
     })
   }
 
-  def apply(f: VisitRequest[AnyContent] => PlainResult) = {
+  def apply(f: VisitRequest[AnyContent] => SimpleResult) = {
     apply[AnyContent](BodyParsers.parse.anyContent)(f)
   }
 }
 
 object Authenticated extends UsesDataStore {
-  def apply(f: VisitRequest[AnyContent] => PlainResult) = VisitAction(implicit req => {
+  def apply(f: VisitRequest[AnyContent] => SimpleResult) = VisitAction(implicit req => {
     req.visit.user match {
       case None => {
         req.visit.redirectUrl = req.path
