@@ -23,7 +23,7 @@ object ApplicationBuild extends Build {
     "com.typesafe.akka" %% "akka-actor" % "2.2.1",
     "com.typesafe.akka" %% "akka-remote" % "2.2.1",
     "org.dupontmanual" %% "dm-image" % "0.1-SNAPSHOT",
-    "org.dupontmanual" %% "scalajdo" % "0.1-SNAPSHOT",
+    "org.dupontmanual" %% "scalajdo" % "0.2-SNAPSHOT",
     "org.dupontmanual" %% "dm-forms" % "0.2-SNAPSHOT"
   )
 

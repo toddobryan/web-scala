@@ -25,52 +25,52 @@
   <logger name="application" level="DEBUG">
     <appender-ref ref="STDOUT"/>
   </logger>
-  <logger name="DataNucleus.ClassLoading" level="INFO">
+  <logger name="DataNucleus.ClassLoading" level="DEBUG">
     <appender-ref ref="A1"/>
   </logger>
-  <logger name="DataNucleus.Connection" level="INFO">
+  <logger name="DataNucleus.Connection" level="DEBUG">
     <appender-ref ref="A1"/>
   </logger>
-  <logger name="DataNucleus.General" level="INFO">
+  <logger name="DataNucleus.General" level="DEBUG">
     <appender-ref ref="A1"/>
   </logger>
-  <logger name="DataNucleus.Cache" level="INFO">
+  <logger name="DataNucleus.Cache" level="DEBUG">
     <appender-ref ref="A1"/>
   </logger>
-  <logger name="DataNucleus.Datastore" level="INFO">
+  <logger name="DataNucleus.Datastore" level="DEBUG">
     <appender-ref ref="A1"/>
   </logger>
-  <logger name="DataNucleus.Transaction" level="INFO">
+  <logger name="DataNucleus.Transaction" level="DEBUG">
     <appender-ref ref="A1"/>
   </logger>
-  <logger name="DataNucleus.Utility" level="INFO">
+  <logger name="DataNucleus.Utility" level="DEBUG">
     <appender-ref ref="A1"/>
   </logger>
-  <logger name="DataNucleus.JDO" level="INFO">
+  <logger name="DataNucleus.JDO" level="DEBUG">
     <appender-ref ref="A1"/>
   </logger>
-  <logger name="DataNucleus.Lifecycle" level="INFO">
+  <logger name="DataNucleus.Lifecycle" level="DEBUG">
     <appender-ref ref="A1"/>
   </logger>
-  <logger name="DataNucleus.ValueGeneration" level="INFO">
+  <logger name="DataNucleus.ValueGeneration" level="DEBUG">
     <appender-ref ref="A1"/>
   </logger>
-  <logger name="DataNucleus.Plugin" level="INFO">
+  <logger name="DataNucleus.Plugin" level="DEBUG">
     <appender-ref ref="A1"/>
   </logger>
-  <logger name="DataNucleus.MetaData" level="INFO">
+  <logger name="DataNucleus.MetaData" level="DEBUG">
     <appender-ref ref="A1"/>
   </logger>
   <logger name="DataNucleus.SchemaTool" level="DEBUG">
     <appender-ref ref="A1"/>
   </logger>
-  <logger name="DataNucleus.Query" level="INFO">
+  <logger name="DataNucleus.Query" level="DEBUG">
     <appender-ref ref="STDOUT"/>
   </logger>
-  <logger name="DataNucleus.Persistence" level="INFO">
+  <logger name="DataNucleus.Persistence" level="DEBUG">
     <appender-ref ref="STDOUT"/>
   </logger>
-  <logger name="DataNucleus.Enhancer" level="INFO">
+  <logger name="DataNucleus.Enhancer" level="DEBUG">
     <appender-ref ref="A1"/>
   </logger>
   <root level="DEBUG">

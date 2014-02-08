@@ -6,6 +6,7 @@ import org.datanucleus.api.jdo.query._
 import org.datanucleus.query.typesafe._
 import scalajdo.DataStore
 import util.UsesDataStore
+import play.api.mvc.Request
 
 @PersistenceCapable(detachable="true")
 class Visit {
@@ -48,6 +49,12 @@ object Visit extends UsesDataStore {
     }
     val cand = QVisit.candidate
     dataStore.pm.query[Visit].filter(cand.uuid.eq(uuid)).executeOption()
+  }
+  
+  def getFromRequest[A](implicit req: Request[A]): Visit = {
+    req.session.get("visit").flatMap(
+        Visit.getByUuid(_)).filter(!_.isExpired).getOrElse(
+            new Visit(System.currentTimeMillis + Visit.visitLength, None))
   }
   
   def deleteExpired() {

@@ -1,11 +1,16 @@
 package util
 
-import scalajdo.DataStore
+import java.util.Properties
 import javax.jdo.JDOHelper
+import scalajdo.DataStore
 import org.datanucleus.api.jdo.JDOPersistenceManagerFactory
 
 object UsesDataStore {
-  val dataStore: DataStore = new DataStore(() => JDOHelper.getPersistenceManagerFactory("webscala").asInstanceOf[JDOPersistenceManagerFactory])
+  val dataStore: DataStore = new DataStore(() => {
+    val props = new Properties()
+    props.put("datanucleus.PersistenceUnitName", "webscala")
+    JDOHelper.getPersistenceManagerFactory(props).asInstanceOf[JDOPersistenceManagerFactory]
+  })
 }
 
 trait UsesDataStore {

@@ -8,7 +8,7 @@ import util.ControllerHelpers._
 object Application extends Controller {
   
   def index = VisitAction { implicit req =>
-    Okay(views.html.index(req.request.remoteAddress))
+    Ok(views.html.index(req.remoteAddress))
   }
   
 }
