@@ -22,6 +22,10 @@ class HtmlRepl {
   val repl = {
     val settings = new Settings
     settings.embeddedDefaults(new ReplClassLoader(settings.getClass().getClassLoader()))
+    settings.bootclasspath.value += (
+        scala.tools.util.PathResolver.Environment.javaBootClassPath + 
+        java.io.File.pathSeparator + "lib/scala-library.jar"
+    )
     val theRepl = new IMain(settings, new PrintWriter(out)) {
       override protected def parentClassLoader: ClassLoader = this.getClass.getClassLoader()
     }
@@ -36,18 +40,17 @@ object SafeCode {
   def runCode(code: => IntpResult): (IntpResult, String) = {
     val htmlRepl = new HtmlRepl()
     val start = htmlRepl.out.getBuffer.length
-    val res = future { code }
-    try {
-      val eventualResult = Await.result(res, 10000 millis)
-      eventualResult match {
+    /* try {
+      val eventualResult = Await.result(res, 10000 millis)*/
+      code match {
         case IntpResults.Success => (IntpResults.Success, "No errors!")
         case IntpResults.Incomplete => (IntpResults.Incomplete, "Your code was not complete. Check near the end.")
         case IntpResults.Error => (IntpResults.Error, "The following error occurred:\n" + htmlRepl.out.getBuffer.substring(start))
-      }
+      }/*
     } catch {
       case to: java.util.concurrent.TimeoutException => (IntpResults.Error, "Timeout Exception. Check for infinite loops.")
       case e: Exception => (IntpResults.Error, "Exception Thrown: " + e)
-    }
+    }*/
   }
   
 }

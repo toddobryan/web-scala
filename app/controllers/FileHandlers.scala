@@ -35,10 +35,10 @@ object FileHandlers extends Controller with UsesDataStore {
    def interpret = VisitAction { implicit req =>
     println(req.body.asFormUrlEncoded.getOrElse(Map()))
     val line = getParameter(req, "line")
-    println(line)
-    val result = SafeCode.runCode { (new HtmlRepl).repl.interpret(line) }
+    val repl = (new HtmlRepl).repl
+    val result = SafeCode.runCode( repl.interpret(line) )
     result._1 match {
-      case IntpResults.Success => Ok( HtmlRepl.resultToHtml((new HtmlRepl).repl.valueOfTerm((new HtmlRepl).repl.mostRecentVar)) )
+      case IntpResults.Success => Ok( HtmlRepl.resultToHtml(repl.valueOfTerm(repl.mostRecentVar)) )
       case IntpResults.Error => Ok(result._2)
       case IntpResults.Incomplete => Ok(result._2)
     }
