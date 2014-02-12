@@ -19,12 +19,12 @@ import util.ControllerHelpers._
 import util.UsesDataStore
 
 object FileHandlers extends Controller with UsesDataStore {
-  
+   // TODO: Fix
    def fileIde(titles: String) = VisitAction { implicit req =>
     asUser { u => 
       val titleList = titles.split("/").toList
       val root = Directory.getUserRoot(u)
-      val matchingFile = root.findItem(titleList)
+      val matchingFile = Directory.getItem/*root*/(titleList)
       withFile(matchingFile) { f =>
         val result = SafeCode.runCode { (new HtmlRepl).repl.interpret(f.content) }
         Ok(views.html.webscala.ideSkeleton(f, result._2))
@@ -51,7 +51,8 @@ object FileHandlers extends Controller with UsesDataStore {
       case None => false
       case Some(user) => {
         val root = Directory.getUserRoot(user)
-        root.findItem(titles.split("/").toList) match {
+        //TODO: Fix here
+        Directory.getItem(titles.split("/").toList) match {
           case Some(_: Directory) => println("This is a directory. What happened?")
           case Some(f: File) => {
             f.content_=(content)
@@ -74,7 +75,8 @@ object FileHandlers extends Controller with UsesDataStore {
       case None => false
       case Some(user) => {
         val root = Directory.getUserRoot(user)
-        root.findItem(titles.split("/").toList) match {
+        // TODO: Fix  Here
+        Directory.getItem(titles.split("/").toList) match {
           case Some(_: Directory) => println("This is a directory. What happened?")
           case Some(f: File) => {
             f.content_=(content)
@@ -95,7 +97,8 @@ object FileHandlers extends Controller with UsesDataStore {
       case None => Redirect(routes.Application.index).flashing(("error" -> "You must be logged into test files"))
       case Some(user) => {
         val root = Directory.getUserRoot(user)
-        root.findItem(titles.split("/").toList) match {
+        // TODO: Fix Here
+        Directory.getItem(titles.split("/").toList) match {
           case Some(_: Directory) => Redirect(routes.Application.index).flashing(("error" -> "This is a directory"))
           case Some(f: File) => {
             val contentRes = SafeCode.runCode { (new HtmlRepl).repl.interpret(f.content) }

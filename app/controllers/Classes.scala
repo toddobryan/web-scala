@@ -17,6 +17,7 @@ import forms.fields._
 import forms.validators._
 import util.ControllerHelpers._
 import util.UsesDataStore
+import models.files.Directory
 
 object Classes extends Controller with UsesDataStore {
   
@@ -101,7 +102,7 @@ object Classes extends Controller with UsesDataStore {
           b.addStudent(s)
           dataStore.pm.makePersistent(b)
           val root = Directory.getUserRoot(s)
-          root.addDirectory(new Directory(b.name, s, Nil))
+          /* TODO: Fix this. root.addDirectory(new Directory(b.name, s, Nil))*/
           dataStore.pm.makePersistent(s)
           Redirect(routes.Classes.myBlocks).flashing(("success") -> ("You have been added to this class, and a class directory" 
                                                                        + " has been added to your home folder."))

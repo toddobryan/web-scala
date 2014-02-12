@@ -4,9 +4,9 @@
   @directory.topOfFile(currPath, directory.owner)
   <h1>@directory.title</h1>
   <ul class="unstyled">
-    @for(item <- directory.sortedContent) {
+    @*@for(item <- directory.sortedContent) {
       @item.asHtmlFO(currPath)
-    }
+    }*@
     <li><a href="@{"/newFile/" + currPath}" class="btn">Add a file or directory to this directory!</a></li>
   </ul>
   

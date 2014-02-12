@@ -5,7 +5,7 @@ import controllers.routes
 import scala.tools.nsc.interpreter.IR.{ Result => IntpResult}
 import play.api._
 import play.api.mvc._
-import webscala._ 
+import webscala._
 import scalajdo._
 import models.files._
 import models.auth._
@@ -17,6 +17,7 @@ import forms._
 import forms.fields._
 import forms.validators._
 import util.QuickRedirects._
+import models.files.Directory
 
 
 object ControllerHelpers extends Controller {

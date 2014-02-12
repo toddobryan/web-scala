@@ -8,28 +8,47 @@ import scalajdo._
 import models.auth._
 import scala.tools.nsc.interpreter.{ Results => IntpResults }
 import webscala._
-import util.UsesDataStore
+import util.{ UsesDataStore, TestableItem, TestableFile }
 
+@PersistenceCapable(detachable="true")
 abstract class Item {
-  def title: String
-  def owner: User
+  @PrimaryKey
+  @Persistent(valueStrategy=IdGeneratorStrategy.INCREMENT)
+  private[this] var _id: Long = _
+  private[this] var _title: String = _
+  @Persistent(defaultFetchGroup = "true")
+  private[this] var _owner: User = _
+  private[this] var _parentId: Long = _
+  
+  def id: Long = _id
+  
+  def title: String = _title
+  def title_=(theTitle: String) = (_title = theTitle)
+  
+  def owner: User = _owner
+  def owner_=(theOwner: User) = (_owner = theOwner)
+  
+  def parentId: Long = _parentId
+  def parentId_=(theId: Long) = (_parentId = theId)
+  
   def asHtmlFO: scala.xml.Elem
   def asHtmlFO(path: String): scala.xml.Elem
   def asBlockFO(blockString: String, studentString: String, pathToDir: String): scala.xml.Elem
-  
-  def pathLinks(path: String): List[String] = {
-    val splitPath = path.split("/").toList
-    if(splitPath.head != "") {
-      (for(i <- 1 to splitPath.length) yield (splitPath.take(i).mkString("/"))).toList
-    }
-    else Nil
-  }
 
-  def topOfFile(path: String, user: User): scala.xml.Elem = 
+  def topOfFile(path: String, user: User): scala.xml.Elem = {
+    def linksForPath(path: String): List[String] = {
+      val splitPath = path.split("/").toList
+      if(splitPath.head != "") {
+        (for(i <- 1 to splitPath.length) yield (splitPath.take(i).mkString("/"))).toList
+      }
+      else Nil
+    }
+    
     <ul class="breadcrumb">
 	  <li><a href="/fileManager">Home</a> <span class="divider">/</span></li>
-      {for(l <- pathLinks(path)) yield Item.breadcrumbLink(l, user)}
+      {for(l <- linksForPath(path)) yield Item.breadcrumbLink(l, user)}
     </ul>
+  }
 }
 
 object Item {
@@ -43,7 +62,7 @@ object Item {
 }
 
 @PersistenceCapable(detachable="true")
-class File extends Item {
+class File extends Item with TestableFile {
   @PrimaryKey
   @Persistent(valueStrategy=IdGeneratorStrategy.INCREMENT)
   private[this] var _id: Long = _
@@ -68,14 +87,6 @@ class File extends Item {
       case Some(date) => lastModified_=(date)
     }
   }
-  
-  def id: Long = _id
-  
-  def title: String = _title
-  def title_=(theTitle: String) = (_title = theTitle)
-  
-  def owner: User = _owner
-  def owner_=(theOwner: User) = (_owner = theOwner)
   
   def content: String = _content
   def content_=(theContent: String) = (_content = theContent)

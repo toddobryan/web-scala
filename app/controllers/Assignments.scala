@@ -16,6 +16,7 @@ import org.dupontmanual.forms.fields._
 import org.dupontmanual.forms.validators._
 import util.ControllerHelpers._
 import util.UsesDataStore
+import models.files.Directory
 
 object Assignments extends Controller with UsesDataStore {
   //lazy val repl = new HtmlRepl()
@@ -24,7 +25,7 @@ object Assignments extends Controller with UsesDataStore {
                      (implicit req: VisitRequest[AnyContent]) = {
     val path = title.mkString("/")
     if(path == "") Okay(views.html.webscala.viewStudentFiles(bString, sString, dir, path))
-    val maybeItem = dir.findItem(title)
+    val maybeItem = /*TODO: Fix*/Directory.getItem(title)
     dirOrFile(maybeItem)
       { d: Directory => Okay(views.html.webscala.viewStudentFiles(bString, sString, d, path)) }
       { f: File => Okay(views.html.webscala.viewStudentFile(bString, sString, f, path)) }
@@ -104,12 +105,12 @@ object Assignments extends Controller with UsesDataStore {
        withAssignment { a => 
          def starterCode = a.starterCode
          val root = Directory.getUserRoot(u)
-         implicit val maybeClassDir = root.content.find(_.title == block)
+         implicit val maybeClassDir = Directory.getItems(root).find(_.title == block)
          withDir {d => 
-           val alreadyAssigned = d.content.find(_.title == assignment)
+           val alreadyAssigned = Directory.getItems(d).find(_.title == assignment)
            alreadyAssigned match {
              case None => {
-               d.addFile(new File(a.title, u, starterCode))
+               /* TODO: Fix Here d.addFile(new File(a.title, u, starterCode))*/
                dataStore.pm.makePersistent(u)
                Redirect(routes.FileMgmt.fileManager(block + "/" + assignment))
              }
@@ -128,7 +129,7 @@ object Assignments extends Controller with UsesDataStore {
       withBlock { b => 
         implicit val maybeStudent = b.students.find(_.username == student)
         withObject[Student]("No such student exists.") { s =>
-          implicit val classRoot = Directory.getUserRoot(s).findItem(block)
+          implicit val classRoot = Directory.getItem(List(block))/* TODO: Fix.getUserRoot(s).findItem(block)*/
           withDir { dir => findStudentFile(block, student, dir, Nil) }
         }
       }
@@ -141,7 +142,7 @@ object Assignments extends Controller with UsesDataStore {
       withBlock(blocks.find(_.name == block)) { b =>
         implicit val maybeStudent = b.students.find(_.username == student)
         withObject[Student]("Student with given name not in block.") { s =>
-          implicit val userRoot = Directory.getUserRoot(s).findItem(block)
+          implicit val userRoot = /* TODO: Fix Here. Directory.getUserRoot(s)*/Directory.getItem(List(block))
           withDir { dir =>
             val path = titles.split("/").toList
             findStudentFile(block, student, dir, path)
@@ -158,10 +159,10 @@ object Assignments extends Controller with UsesDataStore {
       withBlock { b =>
         implicit val maybeStudent = b.students.find(_.username == student)
         withObject[Student]("Student with given name not in block.") { s =>
-          implicit val userRoot = Directory.getUserRoot(s).findItem(block)
+          implicit val userRoot = /*TODO: Fix Directory.getUserRoot(s).*/Directory.getItem(List(block))
           withDir { dir => 
             val path = titles.split("/").toList
-            val maybeFile = dir.findItem(path)
+            val maybeFile = /* TODO: Fix dir*/Directory.getItem(path)
             val maybeAssign = Assignment.getBlockAssignments(b).find(_.title == path.head)
             (maybeFile, maybeAssign) match {
               case (Some(f: File), Some(a: Assignment)) =>Okay(views.html.webscala.showTestResults(a, f))

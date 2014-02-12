@@ -4,7 +4,7 @@ import scala.tools.nsc.interpreter.{ Results => IntpResults }
 import scala.tools.nsc.interpreter.IR.{ Result => IntpResult}
 import play.api._
 import play.api.mvc._
-import webscala._ 
+import webscala._
 import scalajdo._
 import models.files._
 import models.auth._
@@ -16,6 +16,7 @@ import forms._
 import forms.fields._
 import forms.validators._
 import util.ControllerHelpers._
+import models.files.Directory
 
 object FileMgmt extends Controller {
   
@@ -25,7 +26,8 @@ object FileMgmt extends Controller {
     def fields = List(fileName, dirOrFile)
     
     override def validate(vb: ValidBinding): ValidationError = {
-      dir.content.filter(_.title == vb.valueOf(NewFileForm(dir).fileName).trim) match {
+      // TODO Fix
+      Directory.getItems(dir).filter(_.title == vb.valueOf(NewFileForm(dir).fileName).trim) match {
         case Nil => ValidationError(Nil)
         case file :: _ => ValidationError("File with this name already exists.")
       }
@@ -36,17 +38,16 @@ object FileMgmt extends Controller {
   
   def newFileHomeP = newFile("")
   
+  // TODO: Fix with new File Stuff
   def newFileActions(user: User, titles: String, dir: Directory)(implicit req: VRequest):(SimpleResult, SimpleResult) = { 
     formHandle(form = NewFileForm(dir), title = "Add File") {
       vb: ValidBinding => {
         val name = vb.valueOf(NewFileForm(dir).fileName).trim()
         val dirOrFile = vb.valueOf(NewFileForm(dir).dirOrFile)
         if(dirOrFile == "dir") {
-          val newDir = new Directory(name, user, Nil, 2)
-          dir.addDirectory(newDir)
+          val newDir = new Directory(name, user, 0)
         } else {
           val file = new File(name, user, "/* Insert Code Here */", Some(DateTime.now))
-          dir.addFile(file)
         }
         if(titles == "") {
           Redirect("/fileManager").flashing(("success" -> "Item Created"))
@@ -61,7 +62,7 @@ object FileMgmt extends Controller {
     val titlesList = if(titles == "") Nil else titles.split("/").toList
     asUser { user => 
       val root = Directory.getUserRoot(user)
-      implicit val maybeItem = root.findItem(titlesList)
+      implicit val maybeItem = Directory.getItem(titlesList)
       withDir { dir =>
         newFileActions(user, titles, dir)._1
       }
@@ -72,7 +73,7 @@ object FileMgmt extends Controller {
     val titlesList = if(titles == "") Nil else titles.split("/").toList
     asUser { user =>
       val root = Directory.getUserRoot(user)
-      implicit val maybeItem = root.findItem(titlesList)
+      implicit val maybeItem = Directory.getItem(titlesList)
       withDir { dir =>
         newFileActions(user, titles, dir)._2
       }
@@ -96,7 +97,8 @@ object FileMgmt extends Controller {
 
   def findFile(dir: Directory, title: List[String])(implicit req: VisitRequest[AnyContent]) = {
     val path = title.mkString("/")
-    val maybeItem = dir.findItem(title)
+    // TODO: Fix
+    val maybeItem = Directory.getItem(title)
     dirOrFile(maybeItem) 
       { d: Directory => Okay(views.html.webscala.displayFiles(d, path)) }
       { f: File => Okay(views.html.webscala.getFile(f, path)) }
@@ -107,7 +109,8 @@ object FileMgmt extends Controller {
       withBlock(Block.getByName(block)) { b => 
         implicit val maybeAssign = Assignment.getBlockAssignments(b).find(_.title == assignment)
         withAssignment { a =>
-          implicit val matchingFile = Directory.getUserRoot(u).findItem(List(block, assignment))
+          // TODO: Fix
+          implicit val matchingFile = Directory.getItem(/*.getUserRoot(u).*/List(block, assignment))
           withFile { f => Okay(views.html.webscala.showTestResults(a, f)) }
         }
       }
