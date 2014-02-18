@@ -14,7 +14,7 @@ class DatabaseItemSpec extends fixture.FunSpec with UsesDataStore {
   
   type FixtureParam = ItemDatabaseInterface
   
-  def withFixture(test: OneArgTest) {
+  def withFixture(test: OneArgTest) = {
     object CurrentImplementation extends ItemDatabaseInterface {
       /* I fill this in once I complete the class updates. */
       def newItem(item: TestableItem) = ()
