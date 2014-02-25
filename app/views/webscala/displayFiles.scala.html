@@ -1,7 +1,7 @@
 @(directory: models.files.Directory, currPath: String)(implicit req: models.auth.VisitRequest[_])
 
 @main("Contents of " + directory.title, Html("")) {
-  @directory.topOfFile(currPath, directory.owner)
+  @*directory.topOfFile(currPath, directory.owner)*@
   <h1>@directory.title</h1>
   <ul class="unstyled">
     @*@for(item <- directory.sortedContent) {

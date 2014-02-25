@@ -5,6 +5,7 @@ import models.files._
 import scalajdo._
 import util.UsesDataStore
 import org.scalatest.fixture
+import org.scalatest.Outcome
 import org.scalatest.Matchers._
 import scala.language.postfixOps
 import scala.util.{Try, Success, Failure}
@@ -14,7 +15,9 @@ class DatabaseItemSpec extends fixture.FunSpec with UsesDataStore {
   
   type FixtureParam = ItemDatabaseInterface
   
-  def withFixture(test: OneArgTest) {
+  
+  
+  def withFixture(test: OneArgTest): Outcome = {
     object CurrentImplementation extends ItemDatabaseInterface {
       /* I fill this in once I complete the class updates. */
       def newItem(item: TestableItem) = ()
