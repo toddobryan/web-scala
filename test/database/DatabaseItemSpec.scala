@@ -46,6 +46,8 @@ class DatabaseItemSpec extends fixture.FunSpec with UsesDataStore {
       itemDb.getItemById(root1.id) shouldBe (Some(root1))
       itemDb.getItemById(file1.id) shouldBe (Some(file1))
       itemDb.getItemById(root2.id) shouldBe (None)
+      
+      
     }
   }
 }  
