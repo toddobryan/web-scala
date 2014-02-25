@@ -4,6 +4,7 @@ import java.util.Properties
 import javax.jdo.JDOHelper
 import scalajdo.DataStore
 import org.datanucleus.api.jdo.JDOPersistenceManagerFactory
+import models.files._
 
 object UsesDataStore {
   val dataStore: DataStore = new DataStore(() => {
