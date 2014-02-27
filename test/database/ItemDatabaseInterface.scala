@@ -116,8 +116,19 @@ trait ItemDatabaseInterface {
     val root1: TestableDirectory = makeDirectory("Home", user1, 0)
     val root2: TestableDirectory = makeDirectory("Home", user2, 0)
     val root3: TestableDirectory = makeDirectory("Home", user3, 0)
+    val folder1: TestableDirectory = makeDirectory("Work", user1, root1.id)
+    val folder2: TestableDirectory = makeDirectory("Music", user1, folder1.id)
+    val folder3: TestableDirectory = makeDirectory("Drake", user1, folder2.id)
     
     val file1: TestableFile = makeFile("Recursion Ex.", user1, root1.id, "val x = \"Jim\"", "No tests")
     val file2: TestableFile = makeFile("Images and Animations", user2, root2.id, "val img = new Image()", "test { }")
+    val file3: TestableFile = makeFile("Def", user3, root3.id, "def makeDirectory", "No tests")
+    val file4: TestableFile = makeFile("Vals and Vars", user4, root3.id, "val y = \"Raghav\"", "No tests" )
+    val file5: TestableFile = makeFile("Scala", user1, folder2.id, "val a = \"Scala\"", "No tests" )
+    val file6: TestableFile = makeFile("Take Care", user1, folder3.id, "I'm Drake", "No tests" )
+    val file7: TestableFile = makeFile("I'm on One", user1, folder3.id, "Yo", "No tests" )
+    
+    val twofolders = List(folder1, folder2)
+    val folderwithfiles = List(folder3, file5, file6, file7)
   }
 }
