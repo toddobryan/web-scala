@@ -14,16 +14,8 @@ import util.{TestableDirectory, TestableFile, TestableItem}
 class DatabaseItemSpec extends fixture.FunSpec with UsesDataStore {
   
   type FixtureParam = ItemDatabaseInterface
-  
-  
-<<<<<<< HEAD
-  type OneArgTest = fixture.Suite.
-  
-  def withFixture(test: OneArgTest) {
-=======
-  
+
   def withFixture(test: OneArgTest): Outcome = {
->>>>>>> c627179dd7782e3c1f813e3f098bfc3343fc2872
     object CurrentImplementation extends ItemDatabaseInterface {
       /* I fill this in once I complete the class updates. */
       def newItem(item: TestableItem) = ()
@@ -59,7 +51,6 @@ class DatabaseItemSpec extends fixture.FunSpec with UsesDataStore {
       itemDb.getItemById(root1.id) shouldBe (Some(root1))
       itemDb.getItemById(file1.id) shouldBe (Some(file1))
       itemDb.getItemById(root2.id) shouldBe (None)
-<<<<<<< HEAD
       itemDb.getItemById(file2.id) shouldBe (None)
       itemDb.getItemById(file3.id) shouldBe (Some(file3))
       itemDb.getItemById(root3.id) shouldBe (Some(root3))
@@ -108,15 +99,6 @@ class DatabaseItemSpec extends fixture.FunSpec with UsesDataStore {
       //tests getItem
       
       itemDb.getItem(folder1, List(s"$folder2.title, $folder3.title, $file6.title")) shouldBe (file6)
-      
-      
-      
-      
-      
-=======
->>>>>>> c627179dd7782e3c1f813e3f098bfc3343fc2872
-      
-      
     }
   }
 }  
