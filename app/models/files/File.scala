@@ -8,10 +8,10 @@ import scalajdo._
 import models.auth._
 import scala.tools.nsc.interpreter.{ Results => IntpResults }
 import webscala._
-import util.{ UsesDataStore, TestableItem, TestableFile }
+import util.{ UsesDataStore, TestableItem, TestableFile, TestableDirectory }
 
 @PersistenceCapable(detachable="true")
-abstract class Item {
+sealed abstract class Item {
   @PrimaryKey
   @Persistent(valueStrategy=IdGeneratorStrategy.INCREMENT)
   private[this] var _id: Long = _
@@ -19,6 +19,8 @@ abstract class Item {
   @Persistent(defaultFetchGroup = "true")
   private[this] var _owner: User = _
   private[this] var _parentId: Long = _
+  @Persistent(defaultFetchGroup= "true")
+  private[this] var _lastModified: java.sql.Timestamp = _
   
   def id: Long = _id
   
@@ -31,71 +33,136 @@ abstract class Item {
   def parentId: Long = _parentId
   def parentId_=(theId: Long) = (_parentId = theId)
   
-  def asHtmlFO: scala.xml.Elem
-  def asHtmlFO(path: String): scala.xml.Elem
-  def asBlockFO(blockString: String, studentString: String, pathToDir: String): scala.xml.Elem
-
-  def topOfFile(path: String, user: User): scala.xml.Elem = {
-    def linksForPath(path: String): List[String] = {
-      val splitPath = path.split("/").toList
-      if(splitPath.head != "") {
-        (for(i <- 1 to splitPath.length) yield (splitPath.take(i).mkString("/"))).toList
-      }
-      else Nil
-    }
-    
-    <ul class="breadcrumb">
-	  <li><a href="/fileManager">Home</a> <span class="divider">/</span></li>
-      {for(l <- linksForPath(path)) yield Item.breadcrumbLink(l, user)}
-    </ul>
-  }
-}
-
-object Item {
-  def breadcrumbLink(link: String, user: User): scala.xml.Elem =
-    <li>
-    <a href={"/fileManager/" + link}>
-    {link.split("/").toList.last} 
-    </a>
-    <span class="divider">/</span>
-    </li>
-}
-
-@PersistenceCapable(detachable="true")
-class File extends Item with TestableFile {
-  @PrimaryKey
-  @Persistent(valueStrategy=IdGeneratorStrategy.INCREMENT)
-  private[this] var _id: Long = _
-  private[this] var _title: String = _
-  @Persistent(defaultFetchGroup = "true")
-  private[this] var _owner: User = _
-  @Column(length=1048576) // 1MB
-  private[this] var _content: String = _
-  @Column(length=1048576) // 1MB
-  private[this] var _tests: String = _
-  @Persistent(defaultFetchGroup= "true")
-  private[this] var _lastModified: java.sql.Timestamp = _
-  
-  def this(title: String, owner: User, content: String, lastModified: Option[DateTime] = None) {
-    this()
-    _title = title
-    _owner = owner
-    _content = content
-    _tests = File.defaultTestCode(title)
-    lastModified match {
-      case None => _lastModified = null
-      case Some(date) => lastModified_=(date)
-    }
-  }
-  
-  def content: String = _content
-  def content_=(theContent: String) = (_content = theContent)
-  
-  def tests: String = _tests
-  def tests_=(theTests: String) = (_tests = theTests)
-  
   def lastModified: Option[DateTime] = if(_lastModified == null) None else Some(new DateTime(_lastModified.getTime))
   def lastModified_=(theDate: DateTime) = (_lastModified = new java.sql.Timestamp(theDate.getMillis()))
+  
+   def timeString = lastModified match {
+    case None => ""
+    case Some(date) => {
+      val now = DateTime.now()
+      val timeSince = now.getMillis - date.getMillis
+      val millInADay = 86400000
+      if(timeSince < millInADay && now.getDayOfMonth == date.getDayOfMonth)
+        "%d:%02d".format(date.getHourOfDay, date.getMinuteOfHour)
+      else if (timeSince < 2 * millInADay && now.getDayOfMonth - 1 == date.getDayOfMonth)
+        "Yesterday" + "%d:%02d".format(date.getHourOfDay, date.getMinuteOfHour)
+      else
+        "%02d-%02d".format(date.getDayOfMonth, date.getMonthOfYear)
+    }
+  }
+}
+
+trait QItem extends PersistableExpression[Item] {
+  private[this] lazy val _id: NumericExpression[Long] = new NumericExpressionImpl[Long](this, "_id")
+  def id: NumericExpression[Long] = _id
+
+  private[this] lazy val _title: StringExpression = new StringExpressionImpl(this, "_title")
+  def title: StringExpression = _title
+
+  private[this] lazy val _owner: ObjectExpression[User] = new ObjectExpressionImpl[User](this, "_owner")
+  def owner: ObjectExpression[User] = _owner
+  
+  private[this] lazy val _parentId: NumericExpression[Long] = new NumericExpressionImpl[Long](this, "_parentId")
+  def parentId: NumericExpression[Long] = _parentId
+}
+
+object QItem {
+  def apply(parent: PersistableExpression[Item], name: String, depth: Int): QItem = {
+    new PersistableExpressionImpl[Item](parent, name) with QItem
+  }
+
+  def apply(cls: Class[Item], name: String, exprType: ExpressionType): QItem = {
+    new PersistableExpressionImpl[Item](cls, name, exprType) with QItem
+  }
+
+  private[this] lazy val jdoCandidate: QItem = candidate("this")
+
+  def candidate(name: String): QItem = QItem(null, name, 5)
+
+  def candidate(): QItem = jdoCandidate
+
+  def parameter(name: String): QItem = QItem(classOf[Item], name, ExpressionType.PARAMETER)
+
+  def variable(name: String): QItem = QItem(classOf[Item], name, ExpressionType.VARIABLE)
+}
+
+class Directory extends Item with TestableDirectory with DisplayableDirectory {
+  def this(title: String, owner: User, parentId: Long) {
+    this()
+    title_=(title)
+    owner_=(owner)
+    parentId_=(parentId)
+  }
+}
+
+object Directory extends UsesDataStore {
+  def create(title: String, owner: User, parentId: Long): Directory = {
+    val dir = new Directory(title, owner, parentId)
+    dataStore.pm.makePersistent(dir)
+  }
+  
+  def getById(id: Long): Option[Directory] = {
+    val cand = QItem.candidate
+    val query = dataStore.pm.query[Item].filter(cand.id.eq(id)).executeOption
+    query match {
+      case Some(dir: Directory) => Some(dir)
+      case _ => None
+    }
+  }
+  
+  // TODO: Need to fix this
+  def getItems(directory: Directory): List[Item] = Nil
+  
+  // TODO: And this
+  def getItem(pathToFile: List[String]): Option[Item] = None
+
+  def getByOwner(owner: User): List[Directory] = {
+   Nil
+  }
+  
+  def getUserRoot(user: User): Directory = { new Directory() /*
+    val cand = QDirectory.candidate
+    dataStore.pm.query[Directory].filter(cand.owner.eq(user).and(cand.parentId.eq(0.toLong))).executeOption() match {
+      case Some(root) => root
+      case None => {
+        val root = new Directory("Home", user, 0)
+        dataStore.pm.makePersistent(root)
+        root
+      }
+    }*/
+  }
+}
+
+class File extends Item with TestableFile with DisplayableFile with UsesDataStore {  
+  
+  def this(title: String, owner: User, parentId: Long) {
+    this()
+    title_=(title)
+    owner_=(owner)
+    parentId_=(parentId)
+  }
+  
+  protected def fileaddon: FileAddOn = {
+    val cand = QFileAddOn.candidate
+    try {
+      dataStore.pm.query[FileAddOn].filter(cand.itemId.eq(id)).executeOption.get
+    } catch {
+      case e: Exception => throw new Exception("This file was not created with an add-on.")
+    }
+  }
+  
+  def content: String = fileaddon.content
+  def content_=(theContent: String): Unit = {
+    fileaddon.content_=(theContent)
+    dataStore.pm.makePersistent(fileaddon)
+  }
+  
+  def tests: String = fileaddon.tests
+  def tests_=(theTests: String): Unit = {
+    fileaddon.tests_=(theTests)
+    dataStore.pm.makePersistent(fileaddon)
+  }
+  
   
   override def toString = {
     "%s -- %s".format(title, owner)
@@ -111,59 +178,6 @@ class File extends Item with TestableFile {
         case Some(dt2) => dt1.getMillis > dt2.getMillis
       }
     }
-  }
-  
-  def timeString = lastModified match {
-    case None => ""
-    case Some(date) => {
-      val now = DateTime.now()
-      val timeSince = now.getMillis - date.getMillis
-      val millInADay = 86400000
-      if(timeSince < millInADay && now.getDayOfMonth == date.getDayOfMonth)
-        "%d:%02d".format(date.getHourOfDay, date.getMinuteOfHour)
-      else if (timeSince < 2 * millInADay && now.getDayOfMonth - 1 == date.getDayOfMonth)
-        "Yesterday" + "%d:%02d".format(date.getHourOfDay, date.getMinuteOfHour)
-      else
-        "%02d-%02d".format(date.getDayOfMonth, date.getMonthOfYear)
-    }
-  }
-  
-  // F.0. -> File Organizer
-  def asHtmlFO: scala.xml.Elem = {
-    <li class="file-fo">
-	  <a href={"/file/" + id}>
-		<div class="file-title span6">{title}</div>
-		<div class="file-modified span2">{timeString}</div>
-      </a>
-      <form class="in-line">
-		<button method="post" action={"/deleteFile/" + id}>
-			Delete?
-		</button>
-	  </form>
-    </li>
-  }
-  
-  def asHtmlFO(pathToDir: String): scala.xml.Elem = {
-    <li class="file-fo">
-	  <a href={"/fileManager/" + pathToDir + {if(pathToDir == "") "" else "/"} + title}>
-		<div class="file-title span6">{title}</div>
-		<div class="file-modified span2">{timeString}</div>
-      </a>
-    </li>
-  }
-  
-  def asBlockFO(blockString: String, studentString: String, pathToDir: String): scala.xml.Elem = {
-     <li class={"file-fo"}>
-       <a href={"/myClasses/" + blockString + "/" + studentString + "/" + {if(pathToDir == "") "" else "/"} + title}>
-         <div class="file-title span4">{title}</div>
-		 <div class="file-modified span2">{timeString}</div>
-       </a>
-	   <div class="span3"><button href={teacherTestUrl(blockString, studentString, pathToDir)} class="btn test-btn">Test Code</button></div>
-     </li>
-   }
-  
-  def teacherTestUrl(blockString: String, studentString: String, pathToDir: String): String ={
-    "/myClasses/" + blockString + "/" + studentString + "/" + "testCode" + "/" + {if(pathToDir == "") "" else "/"} + title
   }
   
   def isAssignment(currPath: String): Boolean = {
@@ -232,52 +246,77 @@ class File extends Item with TestableFile {
 }
   
 object File extends UsesDataStore {
-	def getById(id: Long): Option[File] = {
-	  val cand = QFile.candidate
-	  dataStore.pm.query[File].filter(cand.id.eq(id)).executeOption
-	}
+  def create(title: String, owner: User, parentId: Long, 
+      content: String, test: String): File = {
+    val f = new File(title, owner, parentId)
+    dataStore.pm.makePersistent(f)
+    val addon = new FileAddOn(f.id, content, test)
+    dataStore.pm.makePersistent(addon)
+    f
+  }
+  
+  def defaultFile: String = "/* Insert Code Here */"
 	
-	def getByOwner(owner: User): List[File] = {
-	  val cand = QFile.candidate
-	  dataStore.pm.query[File].filter(cand.owner.eq(owner)).executeList
-	}
+  def defaultTestCode(s: String): java.lang.String =
+	"""import org.scalatest.FunSuite
+	  |import org.scalatest.matchers.ShouldMatchers
+	  |
+	  |// Do not change the name of this test object, please!
+	  |class """ + objectName(s) + "Test" + """ extends FunSuite with ShouldMatchers {
+	  |  test("sample") {
+	  |    val x = 2 + 2
+	  |   x should be === (4)
+	  |  }
+	  |}""".stripMargin
 	
-	def mostRecentFour(owner: User): List[File] = {
-	  getByOwner(owner).sortWith(_ recentSort _).take(4)
-	}
 	
-	def defaultTestCode(s: String): java.lang.String = {
-"""import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+  def objectName(s: String): String = {
+	s.split(" ").map(capitalize(_)).mkString("")
+  }
 
-// Do not change the name of this test object, please!
-class """ + objectName(s) + "Test" + """ extends FunSuite with ShouldMatchers {
-  test("sample") {
-    val x = 2 + 2
-	x should be === (4)
+  def capitalize(s: String) = {
+    s.replaceFirst(s.substring(0,1), s.substring(0,1).toUpperCase)
   }
 }
-"""
-	}
-	
-	def objectName(s: String): String = {
-	  s.split(" ").map(capitalize(_)).mkString("")
-    }
-	
-	def capitalize(s: String) = {
-      s.replaceFirst(s.substring(0,1), s.substring(0,1).toUpperCase)
-	}
+
+@PersistenceCapable(detachable="true")
+class FileAddOn {
+  @PrimaryKey
+  @Persistent(valueStrategy=IdGeneratorStrategy.INCREMENT)
+  private[this] var _id: Long = _
+  @Unique
+  @Column(allowsNull="false")
+  private[this] var _itemId: Long = _
+  @Column(length=1048576) // 1MB
+  private[this] var _content: String = _
+  @Column(length=1048576) // 1MB
+  private[this] var _tests: String = _
+  
+  def this(itemId: Long, content: String, tests: String) = {
+    this()
+    itemId_=(itemId)
+    content_=(content)
+    tests_=(tests)
+  }
+  
+  def id: Long = _id
+  
+  def itemId: Long = _itemId
+  def itemId_=(theItemId: Long) = (_itemId = theItemId)
+  
+  def content: String = _content
+  def content_=(theContent: String) = (_content = theContent)
+  
+  def tests: String = _tests
+  def tests_=(theTests: String) = (_tests = theTests)
 }
 
-trait QFile extends PersistableExpression[File] {
+trait QFileAddOn extends PersistableExpression[FileAddOn] {
   private[this] lazy val _id: NumericExpression[Long] = new NumericExpressionImpl[Long](this, "_id")
   def id: NumericExpression[Long] = _id
   
-  private[this] lazy val _title: StringExpression = new StringExpressionImpl(this, "_title")
-  def title: StringExpression = _title
-  
-  private[this] lazy val _owner: ObjectExpression[User] = new ObjectExpressionImpl[User](this, "_owner")
-  def owner: ObjectExpression[User] = _owner
+  private[this] lazy val _itemId: NumericExpression[Long] = new NumericExpressionImpl[Long](this, "_itemId")
+  def itemId: NumericExpression[Long] = _itemId
   
   private[this] lazy val _content: StringExpression = new StringExpressionImpl(this, "_content")
   def content: StringExpression = _content
@@ -286,22 +325,22 @@ trait QFile extends PersistableExpression[File] {
   def tests: StringExpression = _tests
 }
 
-object QFile {
-  def apply(parent: PersistableExpression[File], name: String, depth: Int): QFile = {
-    new PersistableExpressionImpl[File](parent, name) with QFile
+object QFileAddOn {
+  def apply(parent: PersistableExpression[FileAddOn], name: String, depth: Int): QFileAddOn = {
+    new PersistableExpressionImpl[FileAddOn](parent, name) with QFileAddOn
   }
   
-  def apply(cls: Class[File], name: String, exprType: ExpressionType): QFile = {
-    new PersistableExpressionImpl[File](cls, name, exprType) with QFile
+  def apply(cls: Class[FileAddOn], name: String, exprType: ExpressionType): QFileAddOn = {
+    new PersistableExpressionImpl[FileAddOn](cls, name, exprType) with QFileAddOn
   }
   
-  private[this] lazy val jdoCandidate: QFile = candidate("this")
+  private[this] lazy val jdoCandidate: QFileAddOn = candidate("this")
   
-  def candidate(name: String): QFile = QFile(null, name, 5)
+  def candidate(name: String): QFileAddOn = QFileAddOn(null, name, 5)
   
-  def candidate(): QFile = jdoCandidate
+  def candidate(): QFileAddOn = jdoCandidate
   
-  def parameter(name: String): QFile = QFile(classOf[File], name, ExpressionType.PARAMETER)
+  def parameter(name: String): QFileAddOn = QFileAddOn(classOf[FileAddOn], name, ExpressionType.PARAMETER)
   
-  def variable(name: String): QFile = QFile(classOf[File], name, ExpressionType.VARIABLE)
+  def variable(name: String): QFileAddOn = QFileAddOn(classOf[FileAddOn], name, ExpressionType.VARIABLE)
 }

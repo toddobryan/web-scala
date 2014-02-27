@@ -47,7 +47,7 @@ object FileMgmt extends Controller {
         if(dirOrFile == "dir") {
           val newDir = new Directory(name, user, 0)
         } else {
-          val file = new File(name, user, "/* Insert Code Here */", Some(DateTime.now))
+          //TODO : Fix val file = new File(name, user, "/* Insert Code Here */", Some(DateTime.now))
         }
         if(titles == "") {
           Redirect("/fileManager").flashing(("success" -> "Item Created"))
